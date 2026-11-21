@@ -1,0 +1,55 @@
+const site = 'https://www.eveonline.com';
+const repository = 'mrd-e/CEVE-History';
+const workflow = `https://api.github.com/repos/${repository}/actions/workflows/news.yml`;
+
+async function checked(url, options) {
+  const response = await fetch(url, options);
+  if (!response.ok) throw new Error(`${url} 返回 HTTP ${response.status}`);
+  return response;
+}
+
+async function patchChanged(state) {
+  const news = await (await checked(`${site}/news`)).text();
+  const slug = news.match(/<a\b[^>]*href="\/news\/view\/(patch-notes-version-[\d-]+)"[^>]*>\s*<strong>Patch Notes<\/strong>/i)?.[1];
+  if (!slug) throw new Error('官网新闻页未找到当前补丁');
+  if (slug !== state.patch) return true;
+  const html = await (await checked(`${site}/news/view/${slug}`)).text();
+  const script = html.match(/window\.APOLLO_STATE\s*=\s*(\{[\s\S]*?\})\s*;?\s*<\/script>/);
+  if (!script) throw new Error('补丁页缺少文章数据');
+  const data = JSON.parse(script[1]);
+  const resolve = value => value?.__ref ? data[value.__ref] : value;
+  for (const [key, value] of Object.entries(data.ROOT_QUERY)) {
+    if (!key.startsWith('articleCollection(')) continue;
+    const args = JSON.parse(key.slice('articleCollection('.length, -1));
+    if (args.locale !== 'en' || args.where?.slug !== slug) continue;
+    const article = resolve(resolve(value)?.items?.[0]);
+    const updated = resolve(article?.sys)?.publishedAt;
+    if (updated) return updated !== state.patchPublishedAt;
+  }
+  throw new Error('补丁页缺少英文版本时间');
+}
+
+export default {
+  async scheduled(event, env) {
+    const stateResponse = await fetch(`https://raw.githubusercontent.com/${repository}/main/.github/news-state.json`);
+    if (!stateResponse.ok && stateResponse.status !== 404) throw new Error(`读取订阅状态失败 HTTP ${stateResponse.status}`);
+    const state = stateResponse.ok ? await stateResponse.json() : null;
+    const rss = await (await checked(`${site}/rss`)).text();
+    const items = [...rss.matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/gi)];
+    if (!items.length) throw new Error('RSS 缺少新闻条目');
+    const hasNewArticle = items.map(([, item]) => {
+      const slug = item.match(/<link>\s*https?:\/\/(?:www\.)?eveonline\.com\/(?:en\/)?news\/view\/([\w-]+)\/?(?:[?#][^<]*)?\s*<\/link>/i)?.[1];
+      if (!slug) throw new Error('RSS 新闻链接格式异常');
+      return slug;
+    }).some(slug => !state?.feed.includes(slug) && !state?.baseline.includes(slug));
+    const hourly = new Date(event.scheduledTime).getUTCMinutes() === 0;
+    if (state && !hasNewArticle && !(hourly && (state.pending.length || state.deploy || await patchChanged(state)))) return;
+
+    const headers = { Authorization: `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'ceve-history-news' };
+    const runs = await (await checked(`${workflow}/runs?branch=main&per_page=5`, { headers })).json();
+    if (runs.workflow_runs.some(run => run.status !== 'completed')) return;
+    await checked(`${workflow}/dispatches`, {
+      method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ ref: 'main' })
+    });
+  }
+};

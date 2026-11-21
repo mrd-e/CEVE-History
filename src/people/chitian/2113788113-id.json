@@ -5,7 +5,7 @@
   "corporation_id": 98808817,
   "affiliation": {
     "corporation_id": 98808817,
-    "alliance_id": 99010877,
+    "alliance_id": 498125261,
     "left_at": null
   },
   "history": [
@@ -225,7 +225,7 @@
       "end": null
     }
   ],
-  "fetched_at": "2026-11-01",
+  "fetched_at": "2026-11-21",
   "person": {
     "cn_name": "炽天",
     "aliases": [
@@ -238,7 +238,8 @@
       "CEO",
       "低素质",
       "军团管理",
-      "江湖恩怨"
+      "江湖恩怨",
+      "TEST"
     ],
     "radar": {
       "version": 1,
@@ -403,7 +404,7 @@
       "corporation_id": 98808817,
       "affiliation": {
         "corporation_id": 98808817,
-        "alliance_id": 99010877,
+        "alliance_id": 498125261,
         "left_at": null
       },
       "history": [

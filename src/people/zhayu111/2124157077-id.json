@@ -5,7 +5,7 @@
   "corporation_id": 98808817,
   "affiliation": {
     "corporation_id": 98808817,
-    "alliance_id": 99010877,
+    "alliance_id": 498125261,
     "left_at": null
   },
   "history": [
@@ -20,7 +20,7 @@
       "end": null
     }
   ],
-  "fetched_at": "2026-11-01",
+  "fetched_at": "2026-11-21",
   "person": {
     "cn_name": "御天",
     "aliases": [
@@ -29,7 +29,8 @@
     ],
     "epithet": "是非交给联盟，联盟把罚单改了。",
     "tags": [
-      "00区"
+      "00区",
+      "TEST"
     ],
     "radar": {
       "version": 1,
@@ -198,7 +199,7 @@
       "corporation_id": 98808817,
       "affiliation": {
         "corporation_id": 98808817,
-        "alliance_id": 99010877,
+        "alliance_id": 498125261,
         "left_at": null
       },
       "history": [

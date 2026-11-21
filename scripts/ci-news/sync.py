@@ -1,4 +1,4 @@
-"""天书的每小时任务。scan 保存待办；publish 仅在整篇校验通过后确认完成。"""
+"""天书自动收录任务。scan 保存待办；publish 仅在整篇校验通过后确认完成。"""
 
 import argparse
 import hashlib
@@ -59,7 +59,7 @@ def current_patch(html):
 
 def article(slug):
     html = ccp.fetch(ccp.page_url(slug)).decode()
-    return ccp.extract_article(html, slug)["markdown"]
+    return ccp.extract_article(html, slug)
 
 
 def discover(previous, feed, patch, fingerprint):
@@ -284,9 +284,13 @@ def git_save(paths, message):
 def scan():
     feed = feed_slugs(ccp.fetch(f"{ccp.SITE}/rss"))
     patch = current_patch(ccp.fetch(f"{ccp.SITE}/news").decode())
-    state = discover(read_state(), feed, patch, digest(article(patch)))
-    write_state(state)
-    git_save([STATE], "天书：更新订阅待办")
+    previous = read_state()
+    current = article(patch)
+    state = discover(previous, feed, patch, digest(current["markdown"]))
+    state["patchPublishedAt"] = current["updated"]
+    if state != previous:
+        write_state(state)
+        git_save([STATE], "天书：更新订阅待办")
     print(f"订阅 {len(feed)} 篇，当前 {patch}，待办 {len(state['pending'])} 篇")
 
 
@@ -305,10 +309,10 @@ def prepare_page(slug, state, page):
             except ValueError:
                 pass  # 缺少可配对的中文日期标题，按英文小节翻译。
             zh = {key: value for key, value in zh.items() if ccp.cjk_share(value) >= 0.3}
-        return patch_translation(slug, article(slug), state["sections"].get(slug, {}),
+        return patch_translation(slug, article(slug)["markdown"], state["sections"].get(slug, {}),
                                  page.read_text("utf-8") if page.exists() else None, zh)
     if official:
-        return proofread(official, article(slug)), "official", {}
+        return proofread(official, article(slug)["markdown"]), "official", {}
     return translate(None, slug, url=ccp.page_url(slug)), "site", {}
 
 
@@ -321,6 +325,7 @@ def publish():
         page = NEWS / f"{slug}.md"
         paths = [STATE]
         if PATCH.fullmatch(slug) or not page.exists():
+            previous_page = page.read_bytes() if page.exists() else None
             try:
                 text, origin, hashes = prepare_page(slug, state, page)
                 draft = FRAMEWORK / "jobs" / "publication.md"
@@ -333,8 +338,9 @@ def publish():
                 failed.append(slug)
                 continue
             run(["node", "scripts/news-workbench.mjs", "check"], cwd=ROOT)
-            paths.append(page)
-            state["deploy"] = True
+            if page.read_bytes() != previous_page:
+                paths.append(page)
+                state["deploy"] = True
             if PATCH.fullmatch(slug):
                 state["sections"][slug] = hashes
         state["pending"].remove(slug)
@@ -345,17 +351,18 @@ def publish():
 
 
 def deploy():
-    # 只读已成功推送的状态；发布调度中断时下一次接着请求。
+    state = read_state()
+    if not state or not state["deploy"]:
+        return
+    # 确认部署标记已推送；发布调度中断时下一次接着请求。
     run(["git", "fetch", "origin", "main"], cwd=ROOT)
     if run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True).stdout != run(
             ["git", "rev-parse", "origin/main"], cwd=ROOT, capture_output=True).stdout:
         raise ValueError("远端分支已移动，下次从最新版本继续")
-    state = read_state()
-    if state and state["deploy"]:
-        run(["gh", "workflow", "run", "deploy.yml", "--ref", "main"], cwd=ROOT)
-        state["deploy"] = False
-        write_state(state)
-        git_save([STATE], "天书：已请求站点部署")
+    run(["gh", "workflow", "run", "deploy.yml", "--ref", "main"], cwd=ROOT)
+    state["deploy"] = False
+    write_state(state)
+    git_save([STATE], "天书：已请求站点部署")
 
 
 def smoke():

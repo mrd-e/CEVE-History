@@ -2,7 +2,7 @@
   "corp": {
     "id": 98808817,
     "cn_name": "白魔爪骑士团",
-    "epithet": "蓝章鱼阵营里敢打敢拼的华人主力，秉持九十分靠莽的草莽豪气，生死看淡专打逆风硬仗",
+    "epithet": "小鳄鱼旗下敢打敢拼的华人军团，秉持九十分靠莽的草莽豪气，生死看淡专打逆风硬仗",
     "style": "warlord",
     "ratings": {
       "pvp": 87,
@@ -13,21 +13,21 @@
   "esi": {
     "name": "Knight of Zero Ultra",
     "ticker": "K Z U",
-    "member_count": 739,
+    "member_count": 410,
     "ceo": {
-      "id": 2120421439,
-      "name": "chitian"
+      "id": 2115162092,
+      "name": "Alan froster"
     },
     "alliance": {
-      "id": 99010877,
-      "name": "Out of the Blue.",
-      "ticker": "VAPOR"
+      "id": 498125261,
+      "name": "Test Alliance Please Ignore",
+      "ticker": "TEST"
     },
     "date_founded": "2025-07-13",
     "open_recruiting": true,
-    "invite_only": false,
+    "invite_only": true,
     "qq": "879553685",
-    "as_of": "2026-11-06"
+    "as_of": "2026-11-21"
   },
   "zkb": {
     "kills": 27188,

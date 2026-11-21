@@ -161,7 +161,8 @@
           "lost": 107,
           "isk_destroyed": 41300351867,
           "last_active": "2026-10",
-          "as_of": "2026-11-02"
+          "as_of": "2026-11-22",
+          "fc": null
         }
       },
       {
@@ -174,9 +175,10 @@
         "zkb": {
           "kills": 37,
           "lost": 43,
-          "isk_destroyed": 10707525624,
+          "isk_destroyed": 10707525637,
           "last_active": "2026-10",
-          "as_of": "2026-11-02"
+          "as_of": "2026-11-22",
+          "fc": null
         }
       },
       {
@@ -191,17 +193,67 @@
           "lost": 10,
           "isk_destroyed": 43390096,
           "last_active": "2026-05",
-          "as_of": "2026-11-02"
+          "as_of": "2026-11-22",
+          "fc": null
+        }
+      },
+      {
+        "id": 2123362718,
+        "name": "Azbra aurelia",
+        "basis": "Azbra 形近主号名，曾与主号同在两家军团，2026-05-23 相邻分钟离开混沌。",
+        "sources": [
+          "materials-ezburra-fofo.json#小号"
+        ],
+        "zkb": {
+          "kills": 23,
+          "lost": 16,
+          "isk_destroyed": 7390951889,
+          "last_active": "2026-10",
+          "as_of": "2026-11-22",
+          "fc": null
+        }
+      },
+      {
+        "id": 2123390899,
+        "name": "azbra opai",
+        "basis": "与已收录小号 Ezburra opai 名字成对，曾与主号同团，2026-05-23 同分钟离开混沌。",
+        "sources": [
+          "materials-ezburra-fofo.json#小号"
+        ],
+        "zkb": {
+          "kills": 1,
+          "lost": 8,
+          "isk_destroyed": 45348193,
+          "last_active": "2025-05",
+          "as_of": "2026-11-22",
+          "fc": null
+        }
+      },
+      {
+        "id": 2123390902,
+        "name": "azbra ruby",
+        "basis": "与 azbra opai 同分钟入团并相邻分钟离团，2026-05-23 与主号相邻分钟离开混沌。",
+        "sources": [
+          "materials-ezburra-fofo.json#小号"
+        ],
+        "zkb": {
+          "kills": 1,
+          "lost": 5,
+          "isk_destroyed": 45348193,
+          "last_active": "2025-05",
+          "as_of": "2026-11-22",
+          "fc": null
         }
       }
     ],
     "accounts": {},
     "zkb": {
-      "kills": 1241,
-      "lost": 399,
-      "isk_destroyed": 750268405793,
-      "last_active": "2026-10",
-      "as_of": "2026-10-23"
+      "kills": 1252,
+      "lost": 402,
+      "isk_destroyed": 752430744001,
+      "last_active": "2026-11",
+      "as_of": "2026-11-22",
+      "fc": null
     }
   }
 }

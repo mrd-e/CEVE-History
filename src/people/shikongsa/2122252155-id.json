@@ -5,7 +5,7 @@
   "corporation_id": 98808817,
   "affiliation": {
     "corporation_id": 98808817,
-    "alliance_id": 99010877,
+    "alliance_id": 498125261,
     "left_at": null
   },
   "history": [
@@ -70,7 +70,7 @@
       "end": null
     }
   ],
-  "fetched_at": "2026-10-08",
+  "fetched_at": "2026-11-21",
   "identity": {
     "version": 1,
     "alts": [
@@ -138,7 +138,8 @@
     ],
     "epithet": "认就认，联盟一来退二百九十亿。",
     "tags": [
-      "00区"
+      "00区",
+      "TEST"
     ],
     "radar": {
       "version": 1,

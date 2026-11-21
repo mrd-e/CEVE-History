@@ -1153,6 +1153,15 @@
       ]
     },
     {
+      "term": "Cockroach",
+      "meaning": "蟑螂",
+      "avoid": "",
+      "note": "舰船名；特殊护卫舰，中文船型全名为“蟑螂级”",
+      "status": "已确认",
+      "kind": "ship",
+      "links": []
+    },
+    {
       "term": "Coercer",
       "meaning": "强制者",
       "avoid": "",
@@ -3562,6 +3571,19 @@
       "status": "已确认",
       "kind": "ship",
       "links": []
+    },
+    {
+      "term": "Naga Navy Issue",
+      "meaning": "娜迦级海军型",
+      "avoid": "",
+      "note": "舰船名；正文优先用“娜迦级海军型”，中文船型全名为“娜迦级海军型”",
+      "status": "已确认",
+      "kind": "ship",
+      "links": [
+        {
+          "word": "娜迦级海军型"
+        }
+      ]
     },
     {
       "term": "Naglfar",

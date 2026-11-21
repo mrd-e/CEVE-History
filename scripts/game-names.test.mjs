@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { applyExceptions, findEnglishNames, gameNames, maskQuoted, validateExceptions } from './game-names.mjs';
+import { applyExceptions, findEnglishNames, findInvalidShipNames, gameNames, maskQuoted, shipMeanings, validateExceptions } from './game-names.mjs';
 
 const names = { Keepstar: '星城', Nyx: '夜神', Turnur: '图尔鲁尔', Tar: '塔尔', 'Moros Navy Issue': '莫洛级海军型', Moros: '莫洛' };
 const terms = text => findEnglishNames(text, names).map(item => item.term);
@@ -65,4 +65,19 @@ test('例外只放过登记的文件和词，失效即报', () => {
 test('例外缺原因报错', () => {
   assert.deepEqual(validateExceptions({ files: { 'a.md': { Nyx: '外号' } } }), []);
   assert.equal(validateExceptions({ files: { 'a.md': { Nyx: ' ' } } }).length, 1);
+});
+
+test('中文船名校验拦截词表外或错译“级”与战役俗称，放过常规修饰词和已收录船名', () => {
+  const ships = shipMeanings([
+    { term: 'Arazu', meaning: '埃拉兹', kind: 'ship' },
+    { term: 'Ishtar', meaning: '伊什塔', kind: 'ship' },
+    { term: 'Moros Navy Issue', meaning: '莫洛级海军型', kind: 'ship' },
+    { term: 'Vexor', meaning: '狂怒者', kind: 'ship' },
+    { term: 'Republic Fleet Firetail', meaning: '共和舰队火尾鸡', kind: 'ship' },
+    { term: 'Opux Luxury Yacht', meaning: '奥普克斯级豪华游轮', kind: 'ship' },
+    { term: 'Iteron Mark V', meaning: '伊特龙级MKV', kind: 'ship' },
+  ]);
+  const bad = findInvalidShipNames('阿拉祖级与伊什塔级同框，海莫洛和狂怒级都错了；引号“阿拉祖级”和《海神示》不算，百万级与无畏级不算，降了级和找上级不算。', ships, { checkShorthand: true });
+  assert.deepEqual(bad.map(item => item.term), ['海莫洛', '阿拉祖级', '狂怒级']);
+  assert.deepEqual(findInvalidShipNames('正牌埃拉兹级、莫洛级海军型、狂怒者级、共和舰队火尾鸡级、奥普克斯级豪华游轮与伊特龙级MKV都合法。', ships, { checkShorthand: true }), []);
 });

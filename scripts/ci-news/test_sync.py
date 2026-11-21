@@ -5,7 +5,10 @@ import os
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
+from subprocess import CalledProcessError
 from unittest.mock import patch
 
 import sync
@@ -51,6 +54,75 @@ class NewsSyncTests(unittest.TestCase):
         self.assertEqual(state["pending"], ["a", "b", "v1"])
         state = sync.discover(state, ["b", "old"], "v2", "two")
         self.assertEqual(state["pending"], ["a", "b", "v1", "v2"])
+
+    def test_scan_without_changes_does_not_write_or_commit(self):
+        slug = "patch-notes-version-24-02"
+        feed = f"<rss><channel><item><link>{sync.ccp.page_url(slug)}</link></item></channel></rss>"
+        news = f'<a href="/news/view/{slug}"><strong>Patch Notes</strong></a>'
+        state = sync.discover(None, [slug], slug, sync.digest("补丁正文"))
+        state["patchPublishedAt"] = "2026-11-20T11:00:10Z"
+        with (patch.object(sync.ccp, "fetch", side_effect=[feed.encode(), news.encode()]),
+              patch.object(sync, "article", return_value={"markdown": "补丁正文", "updated": state["patchPublishedAt"]}),
+              patch.object(sync, "read_state", return_value=state),
+              patch.object(sync, "write_state") as write,
+              patch.object(sync, "git_save") as save,
+              redirect_stdout(StringIO())):
+            sync.scan()
+        write.assert_not_called()
+        save.assert_not_called()
+
+    def test_publish_requests_deploy_only_for_changed_page(self):
+        slug = "patch-notes-version-24-02"
+        for before, after in ((None, "新页面"), ("旧页面", "更新页面"), ("原页面", "原页面")):
+            with self.subTest(before=before, after=after), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                page = root / f"{slug}.md"
+                if before is not None:
+                    page.write_text(before, "utf-8")
+                state = sync.discover(None, [slug], slug, "source")
+                state["pending"] = [slug]
+
+                def run(args, **kwargs):
+                    if args[2] == "add":
+                        page.write_text(after, "utf-8")
+
+                with (patch.object(sync, "NEWS", root), patch.object(sync, "FRAMEWORK", root),
+                      patch.object(sync, "STATE", root / "state.json"),
+                      patch.object(sync, "prepare_page", return_value=("# 标题", "site", {})),
+                      patch.object(sync, "run", side_effect=run),
+                      patch.object(sync, "git_save") as save):
+                    sync.write_state(state)
+                    sync.publish()
+                    saved = sync.read_state()
+                    self.assertEqual(saved["pending"], [])
+                    self.assertEqual(saved["deploy"], before != after)
+                    self.assertEqual(page in save.call_args.args[0], before != after)
+
+    def test_deploy_without_request_does_not_run_commands(self):
+        with (patch.object(sync, "read_state", return_value={"deploy": False}),
+              patch.object(sync, "run") as run):
+            sync.deploy()
+        run.assert_not_called()
+
+    def test_failed_deploy_request_is_retried(self):
+        command = ["gh", "workflow", "run", "deploy.yml", "--ref", "main"]
+        with tempfile.TemporaryDirectory() as temp:
+            with (patch.object(sync, "STATE", Path(temp) / "state.json"),
+                  patch.object(sync, "run") as run,
+                  patch.object(sync, "git_save") as save):
+                sync.write_state({"deploy": True})
+                result = run.return_value
+                result.stdout = "same revision"
+                run.side_effect = [result, result, result, CalledProcessError(1, command)]
+                with self.assertRaises(CalledProcessError):
+                    sync.deploy()
+                self.assertTrue(sync.read_state()["deploy"])
+                save.assert_not_called()
+                run.side_effect = None
+                sync.deploy()
+                self.assertFalse(sync.read_state()["deploy"])
+                run.assert_called_with(command, cwd=sync.ROOT)
+                save.assert_called_once()
 
     def test_source_links(self):
         rss = "<rss><channel><item><link>{}</link></item></channel></rss>"

@@ -4,12 +4,13 @@ import path from 'node:path';
 import { glossaryEntries } from './glossary.mjs';
 import regionNames from '../src/_data/regionNames.js';
 import systemNames from '../src/_data/systemNames.js';
-import { applyExceptions, findEnglishNames, gameNames, namePattern, validateExceptions } from './game-names.mjs';
+import { applyExceptions, findEnglishNames, findInvalidShipNames, gameNames, namePattern, shipMeanings, validateExceptions } from './game-names.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const exceptionsFile = path.join(root, 'docs/game-name-exceptions.json');
 const exceptions = JSON.parse(fs.readFileSync(exceptionsFile, 'utf8'));
 const names = gameNames(glossaryEntries, systemNames, regionNames);
+const ships = shipMeanings(glossaryEntries);
 const pattern = namePattern(names);
 const errors = validateExceptions(exceptions);
 const seen = new Set();
@@ -19,7 +20,9 @@ for (const section of ['people', 'battles', 'corps']) {
     const file = `src/${section}/${slug}/${slug}.md`;
     if (!fs.existsSync(path.join(root, file))) continue;
     seen.add(file);
-    const { kept, stale } = applyExceptions(file, findEnglishNames(fs.readFileSync(path.join(root, file), 'utf8'), names, pattern), exceptions);
+    const content = fs.readFileSync(path.join(root, file), 'utf8');
+    const found = [...findEnglishNames(content, names, pattern), ...findInvalidShipNames(content, ships, { checkShorthand: section === 'battles' })];
+    const { kept, stale } = applyExceptions(file, found, exceptions);
     for (const { line, term, zh } of kept) errors.push(`${file}:${line} ${term} → ${zh}`);
     for (const term of stale) errors.push(`docs/game-name-exceptions.json：${file} 已没有 ${term}，删掉这条例外`);
     for (const json of fs.readdirSync(path.join(dir, slug)).filter(name => name.endsWith('.json'))) {

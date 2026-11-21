@@ -53,4 +53,4 @@ EVE纹章之旅始于2022年的EVE Online：起义资料片让克隆飞行员可
 
 玩家几乎可以操控EVE Online中的一切。除了舰船和建筑的外观，他们建造出了宇宙中大部分存在。Viridian标志着军团在纹章之旅迈出了第一步，让军团内建筑外观的可操作性变得更高。军团可以决定颜色布局及搭配，强化自身在新伊甸的视觉形象。
 
-随着EVE Online:Viridian发布之日越来越近，请持续关注即将播出的CCP TV直播，了解昇威建筑个性化的相关内容，并加入[EVE Online官方Discord](link to Discord)的讨论，别忘了下周《聚焦VIRIDIAN》还有一篇新文章奉上！
+随着EVE Online:Viridian发布之日越来越近，请持续关注即将播出的CCP TV直播，了解昇威建筑个性化的相关内容，并加入[EVE Online官方Discord](https://www.eveonline.com/discord)的讨论，别忘了下周《聚焦VIRIDIAN》还有一篇新文章奉上！

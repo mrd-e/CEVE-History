@@ -5,7 +5,7 @@
   "corporation_id": 98808817,
   "affiliation": {
     "corporation_id": 98808817,
-    "alliance_id": 99010877,
+    "alliance_id": 498125261,
     "left_at": null
   },
   "history": [
@@ -95,7 +95,7 @@
       "end": null
     }
   ],
-  "fetched_at": "2026-10-10",
+  "fetched_at": "2026-11-21",
   "identity": {
     "version": 1,
     "alts": [
@@ -110,54 +110,156 @@
           "lost": 0,
           "isk_destroyed": 0,
           "last_active": "",
-          "as_of": "2026-10-23"
+          "as_of": "2026-11-22",
+          "fc": null
         }
       },
       {
         "id": 2124224983,
         "name": "ColaGuo",
+        "basis": "同词根、同中文头衔“可乐锅”，且与ColaGo同日进出Mindstar Technology与天宫。",
         "sources": [
           "materials-colapan.json"
         ],
         "zkb": {
           "kills": 37,
           "lost": 14,
-          "isk_destroyed": 231994632609,
+          "isk_destroyed": 231994632623,
           "last_active": "2026-09",
-          "as_of": "2026-10-23"
+          "as_of": "2026-11-22",
+          "fc": null
+        }
+      },
+      {
+        "id": 2124235486,
+        "name": "ColaGo",
+        "basis": "同词根、同中文头衔“可乐锅”，与ColaGuo同日进出Mindstar Technology与天宫，且本人叙述明确确认。",
+        "sources": [
+          "materials-colapan.json"
+        ],
+        "zkb": {
+          "kills": 12,
+          "lost": 10,
+          "isk_destroyed": 4482103372,
+          "last_active": "2026-09",
+          "as_of": "2026-11-22",
+          "fc": null
+        }
+      },
+      {
+        "id": 2124282442,
+        "name": "ColaGow",
+        "basis": "同词根（ColaGo/ColaGow）、完全相同的可乐锅头衔与“和气生财”简介，同KZU且与ColaGuo/ColaGo同开灾难级多开击杀。",
+        "sources": [
+          "materials-colapan.json"
+        ],
+        "zkb": {
+          "kills": 5,
+          "lost": 3,
+          "isk_destroyed": 2948026170,
+          "last_active": "2026-09",
+          "as_of": "2026-11-22",
+          "fc": null
+        }
+      },
+      {
+        "id": 2115396064,
+        "name": "9Pounds 15Pence",
+        "basis": "完全相同的可乐锅头衔，先后随ColaPan加入V a l i n o r、WEIN GROUP、KZU，并与ColaGuo/ColaGo/ColaGow同开灾难级协同击杀。",
+        "sources": [
+          "materials-colapan.json"
+        ],
+        "zkb": {
+          "kills": 51,
+          "lost": 18,
+          "isk_destroyed": 12633031942,
+          "last_active": "2026-06",
+          "as_of": "2026-11-22",
+          "fc": null
+        }
+      },
+      {
+        "id": 2115457685,
+        "name": "ColaPot",
+        "basis": "角色名直译“可乐锅”，建号即入9Pounds 15Pence所建军团，并于2023-11-14紧随ColaPan创建WEIN SHIPPING及2026-03-08同日退团。",
+        "sources": [
+          "materials-colapan.json"
+        ],
+        "zkb": {
+          "kills": 0,
+          "lost": 0,
+          "isk_destroyed": 0,
+          "last_active": "",
+          "as_of": "2026-11-22",
+          "fc": null
+        }
+      },
+      {
+        "id": 2119258654,
+        "name": "VaTulkas",
+        "basis": "角色头衔“可乐锅”，2021-10-18建号14分钟后即加入ColaPan所建V a l i n o r并任现任CEO。",
+        "sources": [
+          "materials-colapan.json"
+        ],
+        "zkb": {
+          "kills": 0,
+          "lost": 0,
+          "isk_destroyed": 0,
+          "last_active": "",
+          "as_of": "2026-11-22",
+          "fc": null
+        }
+      },
+      {
+        "id": 2119208879,
+        "name": "Vacolar",
+        "basis": "命名Va-cola-r与VaTulkas/Cola词根相合，建号即入ColaPot所建1人军团Unseen.并任唯一成员兼CEO。",
+        "sources": [
+          "materials-colapan.json"
+        ],
+        "zkb": {
+          "kills": 0,
+          "lost": 0,
+          "isk_destroyed": 0,
+          "last_active": "",
+          "as_of": "2026-11-22",
+          "fc": null
         }
       }
     ],
     "accounts": {},
     "zkb": {
-      "kills": 206,
+      "kills": 207,
       "lost": 79,
-      "isk_destroyed": 72762515032,
-      "last_active": "2026-09",
-      "as_of": "2026-10-23"
+      "isk_destroyed": 72794736109,
+      "last_active": "2026-11",
+      "as_of": "2026-11-22",
+      "fc": null
     }
   },
   "person": {
     "cn_name": "可乐锅",
     "aliases": [
-      "Jiawe1",
       "礼部尚书"
     ],
     "epithet": "和气生财写四遍，赔偿一谈翻两倍。",
     "tags": [
       "00区",
       "低安",
+      "虫洞",
+      "CEO",
       "军团管理",
-      "江湖恩怨"
+      "江湖恩怨",
+      "TEST"
     ],
     "radar": {
       "version": 1,
-      "reviewedAt": "2026-11-14T09:05:00Z",
+      "reviewedAt": "2026-11-22T13:54:30Z",
       "verdict": "和气生财挂四遍，索赔另有报价。",
       "axes": {
         "shenren": {
           "tier": "C",
-          "reason": "邀请遭拒后的辱骂按普通口角，不因索赔金额判恶行。",
+          "reason": "邀请遭拒后的口角回击与自述纷争均属常见社区恩怨，不因索赔金额判恶行。",
           "sources": [
             {
               "label": "昆仑索赔30B纠纷情况说明",
@@ -167,17 +269,21 @@
         },
         "combat": {
           "tier": "C",
-          "reason": "主小号数百击杀，以常规跟队为主。",
+          "reason": "主号与已确认小号合计三百余次击杀，以常规跟队及多开灾难级出击为主，参战艾蒂斯与欧加仑会战。",
           "sources": [
             {
               "label": "ColaPan zKillboard",
               "url": "https://zkillboard.com/character/2114013279/"
+            },
+            {
+              "label": "ColaGuo zKillboard",
+              "url": "https://zkillboard.com/character/2124224983/"
             }
           ]
         },
         "command": {
           "tier": "D",
-          "reason": "外交经办不等于舰队指挥。",
+          "reason": "外交经办与军团建团均不等于舰队指挥，主小号均无Monitor或FC标注。",
           "sources": [
             {
               "label": "ColaPan 角色档案",
@@ -187,7 +293,7 @@
         },
         "charisma": {
           "tier": "D",
-          "reason": "外交职位和国际化名片不证明额外拥趸。",
+          "reason": "早年虫洞YY同频道共居与外交名片仍未形成稳定跨团拥趸或作者号召力。",
           "sources": [
             {
               "label": "昆仑索赔30B纠纷情况说明",
@@ -197,21 +303,33 @@
         },
         "politics": {
           "tier": "B",
-          "reason": "实际经办KZU对外索赔与联盟交涉，按核心外交评。",
+          "reason": "曾创建Valinor与天工，并实际经办KZU对外索赔及对Goons、PLA交涉，按核心管理与外交评B。",
           "sources": [
             {
               "label": "昆仑索赔30B纠纷情况说明",
               "url": "https://tieba.baidu.com/p/10258617353"
+            },
+            {
+              "label": "TianGong Custodes ESI",
+              "url": "https://esi.evetech.net/latest/corporations/98839215/"
             }
           ]
         },
         "wealth": {
-          "tier": "D",
-          "reason": "索赔是军团款项，不能充当个人产业。",
+          "tier": "C",
+          "reason": "已确认小号ColaGuo、ColaGo、ColaGow与9Pounds 15Pence协同多开灾难级出击（满足3–4开PVP门槛），叠加虫洞建团实操，由D升C。",
           "sources": [
             {
-              "label": "ColaPan zKillboard",
-              "url": "https://zkillboard.com/character/2114013279/"
+              "label": "ColaGuo zKillboard",
+              "url": "https://zkillboard.com/character/2124224983/"
+            },
+            {
+              "label": "ColaGow zKillboard",
+              "url": "https://zkillboard.com/character/2124282442/"
+            },
+            {
+              "label": "9Pounds 15Pence zKillboard",
+              "url": "https://zkillboard.com/character/2115396064/"
             }
           ]
         }
