@@ -23,5 +23,6 @@
   "patch": "patch-notes-version-24-02",
   "observed": "4d1425ab704e7f9d80178b1a000ceea6094657c95e7a022c37158b90cff63c87",
   "sections": {},
-  "deploy": false
+  "deploy": false,
+  "patchPublishedAt": "2026-11-20T11:00:10.047Z"
 }
