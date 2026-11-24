@@ -10,16 +10,18 @@
     "monthly-economic-report-october-2026"
   ],
   "feed": [
+    "military-campaigns-update",
     "patch-notes-version-24-02",
     "community-beat-for-20-november",
     "monthly-ban-report-october-2026",
     "25-off-omega-free-black-friday-skins",
     "alliance-tournament-xxii-wrap-up",
     "up-to-25-off-omega-expansion-deals",
-    "the-fractured-skies-expansion-is-here",
-    "monthly-economic-report-october-2026"
+    "the-fractured-skies-expansion-is-here"
   ],
-  "pending": [],
+  "pending": [
+    "military-campaigns-update"
+  ],
   "patch": "patch-notes-version-24-02",
   "observed": "282b421fa221b4e76e039830de6cac950471fcf2be464c40b704dea8a6db10b2",
   "sections": {
