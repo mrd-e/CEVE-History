@@ -19,9 +19,7 @@
     "up-to-25-off-omega-expansion-deals",
     "the-fractured-skies-expansion-is-here"
   ],
-  "pending": [
-    "military-campaigns-update"
-  ],
+  "pending": [],
   "patch": "patch-notes-version-24-02",
   "observed": "282b421fa221b4e76e039830de6cac950471fcf2be464c40b704dea8a6db10b2",
   "sections": {
@@ -73,6 +71,6 @@
       }
     }
   },
-  "deploy": false,
+  "deploy": true,
   "patchPublishedAt": "2026-11-24T11:00:07.460Z"
 }
