@@ -135,7 +135,8 @@ def claude(prompt, job=None):
         directory = FRAMEWORK / "jobs" / job
         args.extend(["-v", f"{directory}:{directory}:rw"])
     tools = "Read,Write,Edit,Bash" if job else ""
-    args.extend(["eve-news-agent", "--tools", tools, "--output-format", "text"])
+    args.extend(["eve-news-agent", "--model", "opus", "--effort", "high",
+                 "--tools", tools, "--output-format", "text"])
     if job:
         args.extend(["--allowedTools", tools])
     output = claude_output(args, prompt)
@@ -239,9 +240,15 @@ def patch_translation(slug, source, previous, page, official=None, translator=tr
     parts = sections(source, EN)
     fingerprints = {}
     old = {}
-    if page and previous:
-        body = page.split("\n---\n", 1)[1].strip()
-        old = sections(body, ZH)
+    if page is not None:
+        _, separator, body = page.partition("\n---\n")
+        if not separator:
+            raise ValueError(f"{slug} 已有补丁页缺少元数据结束行")
+        old = sections(body.strip(), ZH)
+        missing = [key for key in old if not previous.get(key, {}).get("source")]
+        if missing:
+            raise ValueError(f"{slug} 已发布段落缺少原文指纹：{'、'.join(missing)}。"
+                             "请从该页发布时的英文快照补齐后重试。")
     title = "补丁说明——" + slug.removeprefix("patch-notes-version-").replace("-", ".") + "版本"
     result = [f"# {title}"]
     for key, value in parts.items():

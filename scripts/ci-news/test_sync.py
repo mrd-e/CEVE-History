@@ -169,6 +169,16 @@ class NewsSyncTests(unittest.TestCase):
         sync.patch_translation(slug, first.replace("One", "Corrected"), hashes, page, translator=translate)
         self.assertEqual(calls, [slug + "-2026-11-20.1"])
 
+    def test_existing_patch_requires_baseline_before_any_translation(self):
+        slug = "patch-notes-version-24-02"
+        source = "# Version\n\nIntro\n\n## Patch Notes for 2026-11-24.1\nNew\n\n## Patch Notes for 2026-11-18.1\nOld"
+        page = "---\ntitle: 标题\n---\n前言\n\n## **2026-11-18.1补丁说明**\n已发译文"
+        for previous in ({}, {"intro": {"source": sync.digest("old intro")}}):
+            with self.subTest(previous=previous), patch.object(sync, "proofread") as proofread:
+                with self.assertRaisesRegex(ValueError, "已发布段落缺少原文指纹：.*2026-11-18.1"):
+                    sync.patch_translation(slug, source, previous, page, translator=self.fail)
+                proofread.assert_not_called()
+
     def test_patch_demotes_inner_h2(self):
         source = "# Version\n\nIntro\n\n## **Patch Notes for 2026-11-20.1**\n\n## Defect Fixes:\n\n### Graphics:\n\n- Fixed"
         rendered, _, _ = sync.patch_translation(
