@@ -10,8 +10,8 @@
     "monthly-economic-report-october-2026"
   ],
   "feed": [
-    "community-beat-for-20-november",
     "patch-notes-version-24-02",
+    "community-beat-for-20-november",
     "monthly-ban-report-october-2026",
     "25-off-omega-free-black-friday-skins",
     "alliance-tournament-xxii-wrap-up",
@@ -19,10 +19,55 @@
     "the-fractured-skies-expansion-is-here",
     "monthly-economic-report-october-2026"
   ],
-  "pending": [],
+  "pending": [
+    "patch-notes-version-24-02"
+  ],
   "patch": "patch-notes-version-24-02",
-  "observed": "4d1425ab704e7f9d80178b1a000ceea6094657c95e7a022c37158b90cff63c87",
-  "sections": {},
+  "observed": "282b421fa221b4e76e039830de6cac950471fcf2be464c40b704dea8a6db10b2",
+  "sections": {
+    "patch-notes-version-24-02": {
+      "intro": {
+        "source": "3fd487757d63dfc0687cb6df0b7ac80bb43a315981a94c6ca840c2f7e4cd985a",
+        "zh": null,
+        "official": false
+      },
+      "2026-11-20.1": {
+        "source": "128fed5393bc83bcc35d30eacf780767000e87b2e8600d207bbea913069808a9",
+        "zh": null,
+        "official": false
+      },
+      "2026-11-18.1": {
+        "source": "b3e399ab75a0da26c5f19c0532f37a61a9ece3f54674cc114fab78bef6f9deab",
+        "zh": null,
+        "official": false
+      },
+      "2026-11-17.1": {
+        "source": "72fa8c62d2d66af96a7200684f04ceaa308a56e170f1149d5026cce6054c30f6",
+        "zh": null,
+        "official": false
+      },
+      "2026-11-13.1": {
+        "source": "8c7c0dd1625cbd0435978b6b08ea15ed181d1d4b91b527e167b8bd5cd9cd0716",
+        "zh": null,
+        "official": false
+      },
+      "2026-11-12.1": {
+        "source": "467c083f3cb2b6e377fe529c9bfec87183c297e126ebb3e139f14f05c1ba3eb1",
+        "zh": null,
+        "official": false
+      },
+      "2026-11-11.1": {
+        "source": "fa53577a103ac720e59cf2961f97d992cef6499cbd0947fadb88d42fa8925d1a",
+        "zh": null,
+        "official": false
+      },
+      "2026-11-10.1": {
+        "source": "44a35ab117f962484514fa176f87f15fd228ecc9872db7f333864ef3352b071b",
+        "zh": null,
+        "official": false
+      }
+    }
+  },
   "deploy": false,
-  "patchPublishedAt": "2026-11-20T11:00:10.047Z"
+  "patchPublishedAt": "2026-11-24T11:00:07.460Z"
 }
