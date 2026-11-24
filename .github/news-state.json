@@ -19,20 +19,23 @@
     "the-fractured-skies-expansion-is-here",
     "monthly-economic-report-october-2026"
   ],
-  "pending": [
-    "patch-notes-version-24-02"
-  ],
+  "pending": [],
   "patch": "patch-notes-version-24-02",
   "observed": "282b421fa221b4e76e039830de6cac950471fcf2be464c40b704dea8a6db10b2",
   "sections": {
     "patch-notes-version-24-02": {
       "intro": {
-        "source": "3fd487757d63dfc0687cb6df0b7ac80bb43a315981a94c6ca840c2f7e4cd985a",
+        "source": "817bcc562a500b5879dd556f5e5daff936f1175dcbfc034c7f8eb3215b0a2df1",
+        "zh": null,
+        "official": false
+      },
+      "2026-11-24.1": {
+        "source": "a9bda1398a5eba2f27a3bc38b13899969f07cda7ecc44ff9a2e1fa5a5e656428",
         "zh": null,
         "official": false
       },
       "2026-11-20.1": {
-        "source": "128fed5393bc83bcc35d30eacf780767000e87b2e8600d207bbea913069808a9",
+        "source": "b07cf476fdc3edaa98ac3824964334b3790abc05c7063054cc6c5603950ab024",
         "zh": null,
         "official": false
       },
@@ -68,6 +71,6 @@
       }
     }
   },
-  "deploy": false,
+  "deploy": true,
   "patchPublishedAt": "2026-11-24T11:00:07.460Z"
 }
