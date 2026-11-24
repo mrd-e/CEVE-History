@@ -19,9 +19,11 @@
     "up-to-25-off-omega-expansion-deals",
     "the-fractured-skies-expansion-is-here"
   ],
-  "pending": [],
+  "pending": [
+    "patch-notes-version-24-02"
+  ],
   "patch": "patch-notes-version-24-02",
-  "observed": "282b421fa221b4e76e039830de6cac950471fcf2be464c40b704dea8a6db10b2",
+  "observed": "809156a8b60e49a4f99b0c941578125462bb469df185dc0e75bfbd122fdee1d6",
   "sections": {
     "patch-notes-version-24-02": {
       "intro": {
@@ -72,5 +74,5 @@
     }
   },
   "deploy": false,
-  "patchPublishedAt": "2026-11-24T11:00:07.460Z"
+  "patchPublishedAt": "2026-11-24T22:16:15.605Z"
 }
