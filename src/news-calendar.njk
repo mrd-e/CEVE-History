@@ -1,0 +1,118 @@
+---
+layout: base.njk
+pagination:
+  data: newsCalendar.entries
+  size: 100000
+  alias: items
+permalink: /deals/
+pageTitle: 折扣
+pageDescription: EVE Online 官方商城折扣按月跨年对照：PLEX、多人物训练、欧米伽、消耗品与礼包分档整理，2021 年起，时间均为 UTC。
+bodyClass: page-deals
+---
+{#- 没有条目时分页数据为空，本页不生成。分档、按月对照与明细在 scripts/news-calendar.mjs 算好。 -#}
+{%- set cal = newsCalendar -%}
+<section class="intro deals-intro">
+  <h1>折扣</h1>
+  <p>官方商城历年折扣按月对照，用来预判哪个月常出好价：<strong>高价值</strong>指 PLEX 八折及以下、PLEX 购买的多人物训练与欧米伽，以及技能提取器、超核折扣；<strong>小众</strong>是礼包与加速器；<strong>低价值</strong>是现金买的欧米伽／多人物训练、九折上下 PLEX 与每日阿尔法注入器；赠送以圆点标出，纯涂装、SKINR 与游戏内活动不收。时间一律 UTC（北京时间加 8 小时），共 <strong>{{ items.length }}</strong> 项。</p>
+</section>
+
+{#- 正在进行与即将开始：固定在筛选区上方，不受商品与档位筛选影响，避免页面跳动 -#}
+<section id="cal-now" class="cal-now" aria-label="正在进行与即将开始" hidden>
+  <div class="cal-now-group" id="cal-now-live"><h2>正在进行</h2><ul></ul></div>
+  <div class="cal-now-group" id="cal-now-soon"><h2>即将开始<small>14 天内</small></h2><ul></ul></div>
+</section>
+
+<div id="cal-list" class="deals-main">
+  <div class="deals-controls" aria-label="筛选与跳转">
+    <div class="deals-control-row">
+      <span class="deals-control-label" id="cal-tier-heading">档位</span>
+      <div class="tag-bar" id="cal-tiers" role="group" aria-labelledby="cal-tier-heading">
+        {%- for t in cal.tiers %}
+        <button type="button" class="chip is-active deal-tier-btn deal-tier-btn-{{ t.key }}" data-tier="{{ t.key }}" aria-pressed="true">{{ t.name }}<small>{{ t.total }}</small></button>
+        {%- endfor %}
+        <button type="button" class="chip deal-high-only" id="deals-high-only" aria-pressed="false">仅看高价值</button>
+      </div>
+    </div>
+    <div class="deals-control-row">
+      <span class="deals-control-label" id="cal-item-heading">商品</span>
+      <div class="tag-bar" id="cal-items" role="group" aria-labelledby="cal-item-heading">
+        {%- for t in cal.items %}
+        <button type="button" class="chip is-active cal-chip news-chip-cal cal-t-{{ t.key }}" data-item="{{ t.key }}" aria-pressed="true">{{ t.name }}<small>{{ t.total }}</small></button>
+        {%- endfor %}
+      </div>
+    </div>
+    <div class="deals-control-foot">
+      <nav class="deals-jump" aria-label="按年跳转到明细">
+        <span class="deals-control-label">明细</span>
+        {%- for y in cal.details %}
+        <a href="#y{{ y.year }}">{{ y.year }}<small>{{ y.count }}</small></a>
+        {%- endfor %}
+      </nav>
+      <p class="cal-legend" aria-hidden="true">
+        <span class="cal-key cal-key-high">高价值</span>
+        <span class="cal-key cal-key-gift">赠送</span>
+        <span class="cal-key cal-key-cont">跨月延续</span>
+      </p>
+      <p id="filter-status" class="filter-status" aria-live="polite" hidden></p>
+    </div>
+  </div>
+
+  <section class="deals-months" id="deals-months" aria-label="12 个月历年对照" style="--deal-rows: {{ cal.years.length + 1 }}">
+    {%- for m in cal.months %}
+    <article class="deal-month-card" id="m{{ m.month }}" data-m="{{ m.month }}">
+      <header class="deal-month-head">
+        <h2 class="deal-month-title">{{ m.month }} 月<span class="deal-now-badge" hidden>本月</span></h2>
+        <span class="deal-month-heat lv{{ m.heatLevel }}" title="历年 {{ m.month }} 月新开启的高价值折扣共 {{ m.highCount }} 次">
+          <span class="deal-heat-text">高价值 {{ m.highCount }}</span>
+          <span class="deal-heat-dots" aria-hidden="true">{% for i in range(1, 5) %}<i{% if i <= m.heatLevel %} class="on"{% endif %}></i>{% endfor %}</span>
+        </span>
+      </header>
+      {%- for y in m.years %}
+      <div class="deal-year-row" data-year="{{ y.year }}">
+        <span class="deal-year-label">{{ y.year }}</span>
+        <div class="deal-year-chips{% if y.pre %} is-pre{% endif %}{% if not y.chips.length %} is-empty{% endif %}"{% if y.pre %} title="{{ cal.start.slice(0, 7) }} 起收录"{% endif %}>
+          {%- for c in y.chips %}{% set e = c.entry %}
+          <a class="deal-chip deal-chip-{{ e.tier }} cal-t-{{ e.item }}{% if c.cont %} is-cont{% endif %}{% if c.group %} is-group{% endif %}" href="#e-{{ e.key }}" data-key="{{ e.key }}"{% if c.keys %} data-keys="{{ c.keys }}"{% endif %} data-item="{{ e.item }}" data-tier="{{ e.tier }}" title="{% if c.title %}{{ c.title }}{% else %}{{ e.name }}｜{{ e.range }}（UTC）{% if e.discount %}｜{{ e.discount }}{% endif %}{% if e.bonus %}｜{{ e.bonus }}{% endif %}{% endif %}">{% if e.gift %}<i class="deal-dot" aria-hidden="true"></i>{% endif %}<b>{{ e.label }}</b>{% if c.days %}<small>{{ c.days }}</small>{% endif %}</a>
+          {%- endfor %}
+          <span class="deal-empty" aria-hidden="true">{% if y.pre %}未收录{% else %}—{% endif %}</span>
+        </div>
+      </div>
+      {%- endfor %}
+    </article>
+    {%- endfor %}
+  </section>
+
+  <section class="deals-archive" id="deals-archive" aria-label="历年折扣明细">
+    <p id="deals-empty-archive" class="empty" hidden>当前筛选条件下没有记录。</p>
+    {%- for y in cal.details %}
+    <details class="cal-year" id="y{{ y.year }}" data-year="{{ y.year }}" open>
+      <summary class="news-month"><span class="news-month-n">{{ y.year }}</span><span class="news-month-y">YC{{ y.year | int - 1898 }} · <span class="cal-year-count">{{ y.count }}</span> 项</span></summary>
+      {%- for m in y.months %}
+      <section class="cal-month" aria-labelledby="mh{{ m.key }}">
+        <h3 class="cal-month-h" id="mh{{ m.key }}">{{ m.month }} 月</h3>
+        <ul class="cal-items">
+          {%- for e in m.entries %}
+          <li class="cal-item cal-t-{{ e.item }}" id="e-{{ e.key }}" data-key="{{ e.key }}" data-item="{{ e.item }}" data-tier="{{ e.tier }}" data-start="{{ e.start }}" data-end="{{ e.end }}">
+            <p class="cal-item-head">
+              {%- if e.news %}<a class="cal-item-name" href="{{ ('/news/' + e.news + '/') | url }}">{{ e.name }}</a>{% else %}<strong class="cal-item-name">{{ e.name }}</strong>{% endif -%}
+              {%- if e.nameEn %}<span class="cal-item-en" lang="en">{{ e.nameEn }}</span>{% endif %}
+            </p>
+            <p class="cal-item-meta">
+              <time datetime="{{ e.start }}">{{ e.range }}</time><span>UTC</span>
+              <span class="cal-tier cal-tier-{{ e.tier }}">{{ e.tierName }}</span>
+              <span class="cal-tag">{{ e.dealName }}</span>
+              {%- if e.channel %}<span>{{ e.channel }}</span>{% endif %}
+            </p>
+            {%- if e.discount %}<p class="cal-item-line"><b>折扣</b>{{ e.discount }}</p>{% endif %}
+            {%- if e.bonus %}<p class="cal-item-line"><b>{{ '赠送' if e.gift else '附赠' }}</b>{{ e.bonus }}</p>{% endif %}
+          </li>
+          {%- endfor %}
+        </ul>
+      </section>
+      {%- endfor %}
+    </details>
+    {%- endfor %}
+  </section>
+</div>
+
+<script type="module" src="{{ '/assets/js/news-calendar.js' | url }}?v={{ site.build }}"></script>

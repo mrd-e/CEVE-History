@@ -4,6 +4,7 @@ titleEn: 'BREAKING: Angel Cartel Schematics Recovered'
 source: 'https://www.eveonline.com/news/view/breaking-angel-cartel-schematics-recovered'
 published: '2023-07-21'
 officialTags: []
+lore: true
 cover: >-
   https://images.ctfassets.net/7lhcm73ukv5p/5nSupArIqxeEuJU4pCPrSE/b3fb220c84b6e93288683f4eb13d45ca/ClassifiedKeyart1920.jpg
 translation: official

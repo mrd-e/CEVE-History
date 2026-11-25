@@ -43,11 +43,21 @@
   --axis-politics: #45cbd6;
   --axis-wealth: #e6c15a;
   --tianshu: #f2c94c;        /* 天书：明黄 */
+  --lore: #45cbd6;           /* 正史：青 */
+  --deals: #ff9d57;          /* 折扣：琥珀橙 */
   --news-update: #6aa8ff;
   --news-preview: #c678ff;
   --news-event: #4ad07f;
   --news-offer: #ff9d57;
   --news-misc: #9a9384;
+  --lore-news: #45cbd6;       /* 正史·新伊甸新闻：青 */
+  /* 折扣板块：商品色 */
+  --cal-plex: #e6c15a;
+  --cal-omega: #6aa8ff;
+  --cal-mct: #45cbd6;
+  --cal-consumable: #59d18a;
+  --cal-booster: #c678ff;
+  --cal-pack: #ff9d57;
   /* 六维阶位字色（详情页雷达图），浅色另有一套 */
   --tier-ex: #ff5252;
   --tier-ex-glow: rgba(255, 82, 82, .65);
@@ -164,11 +174,20 @@
   --axis-politics: #0f7280;
   --axis-wealth: #8a6a0a;
   --tianshu: #9a6f00;
+  --lore: #0f7280;
+  --deals: #b8540f;
   --news-update: #1f5fb0;
   --news-preview: #7a29b8;
   --news-event: #1c7f49;
   --news-offer: #b8540f;
   --news-misc: #5f574b;
+  --lore-news: #0f7280;
+  --cal-plex: #8a6a00;
+  --cal-omega: #1f5fb0;
+  --cal-mct: #12798a;
+  --cal-consumable: #1b7f48;
+  --cal-booster: #7a29b8;
+  --cal-pack: #b8540f;
   --tier-ex: #b71c1c;
   --tier-ex-glow: rgba(183, 28, 28, .25);
   --tier-s: #955700;
@@ -276,8 +295,8 @@ main.wrap { flex: 1; padding-top: 1.5rem; padding-bottom: 3rem; }
   -webkit-backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--line-soft);
 }
-.header-inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; column-gap: 1rem; min-height: 3.5rem; }
-.brand { display: flex; align-items: center; gap: .6rem; text-decoration: none; color: var(--text); }
+.header-inner { display: flex; flex-wrap: nowrap; align-items: center; column-gap: .85rem; min-height: 3.5rem; }
+.brand { display: flex; align-items: center; gap: .6rem; flex: none; text-decoration: none; color: var(--text); }
 .brand-seal {
   display: inline-grid; place-items: center;
   width: 1.9rem; height: 1.9rem;
@@ -287,50 +306,64 @@ main.wrap { flex: 1; padding-top: 1.5rem; padding-bottom: 3rem; }
 }
 .brand-text { font-family: var(--serif); font-weight: 700; font-size: 1.1rem; line-height: 1.15; letter-spacing: .08em; }
 .brand-text small { display: block; font-family: var(--sans); font-weight: 400; font-size: .7rem; letter-spacing: .02em; color: var(--text-faint); }
-.site-nav { display: flex; gap: .15rem; }
+/* 访问计数徽章：自动推向右侧，窄屏只隐藏不移除，图片照常加载计数 */
+.hits { height: 20px; margin-left: auto; flex: none; }
+.site-nav { display: flex; align-items: center; gap: .15rem; margin-left: auto; }
+.hits:not([hidden]) + .site-nav { margin-left: 0; }
 .site-nav a {
-  padding: .4rem .6rem; border-radius: var(--radius);
-  color: var(--text-dim); text-decoration: none; font-size: .95rem; font-weight: 700; white-space: nowrap;
+  position: relative;
+  padding: .45rem .55rem; border-radius: var(--radius);
+  color: var(--text-dim); text-decoration: none; font-size: .94rem; font-weight: 700; white-space: nowrap;
 }
 .site-nav a:hover { color: var(--text); background: var(--bg-raised); }
+.site-nav a[aria-current="page"]::after {
+  content: ""; position: absolute; left: .45rem; right: .45rem; bottom: .12rem; height: 2px;
+  border-radius: 2px; background: currentColor;
+}
+.site-nav .nav-sep {
+  width: 1px; height: 1rem; margin: 0 .3rem; flex: none;
+  background: var(--line);
+}
 .site-nav .nav-gold, .site-nav .nav-gold:hover { color: var(--gold); }
 .site-nav .nav-blue, .site-nav .nav-blue:hover { color: var(--emblem-blue); }
 .site-nav .nav-zhu, .site-nav .nav-zhu:hover { color: var(--zhu); }
 .site-nav .nav-tianshu, .site-nav .nav-tianshu:hover { color: var(--tianshu); }
-/* 深浅切换：显示要切过去的那一边（深色显示日，浅色显示月）；无 JS 时隐藏 */
-.theme-toggle {
-  display: inline-grid; place-items: center; align-self: center;
-  width: 2rem; height: 2rem; padding: 0; margin-left: .1rem;
+.site-nav .nav-lore, .site-nav .nav-lore:hover { color: var(--lore); }
+.site-nav .nav-deals, .site-nav .nav-deals:hover { color: var(--deals); }
+.header-tools { display: flex; align-items: center; gap: .15rem; flex: none; }
+.tool-btn {
+  display: inline-grid; place-items: center;
+  width: 2rem; height: 2rem; padding: 0;
   color: var(--text-dim); background: none; border: 0; border-radius: var(--radius); cursor: pointer;
+  text-decoration: none;
 }
-.theme-toggle:hover { color: var(--gold); background: var(--bg-raised); }
-.theme-toggle svg { width: 1.1rem; height: 1.1rem; }
+.tool-btn:hover, .tool-btn[aria-current="page"] { color: var(--gold); background: var(--bg-raised); }
+.tool-btn svg { width: 1.1rem; height: 1.1rem; }
+/* 深浅切换：显示要切过去的那一边（深色显示日，浅色显示月）；无 JS 时隐藏 */
 .theme-toggle .i-moon,
 :root[data-theme="light"] .theme-toggle .i-sun { display: none; }
 :root[data-theme="light"] .theme-toggle .i-moon { display: block; }
-/* 访问计数徽章：窄屏只隐藏不移除，图片照常加载计数 */
-.hits { height: 20px; margin-left: auto; }
 
-@media (max-width: 640px) {
+@media (max-width: 900px) {
   .hits { display: none; }
+  .site-nav { margin-left: auto; }
 }
-@media (max-width: 480px) {
+/* 手机与窄平板：两行紧凑页眉，上行站名 + 搜索/深浅按钮，下行 6 个板块一字排开 */
+@media (max-width: 640px) {
+  html { scroll-padding-top: 6rem; }
+  .header-inner { flex-wrap: wrap; row-gap: 0; padding-top: .35rem; min-height: 0; }
+  .brand { gap: .45rem; padding-bottom: .35rem; }
+  .brand-seal { width: 1.65rem; height: 1.65rem; font-size: .92rem; }
+  .brand-text { font-size: .98rem; letter-spacing: .05em; }
   .brand-text small { display: none; }
-  /* 手机页眉压成一行 */
-  .header-inner { flex-wrap: nowrap; column-gap: .4rem; }
-  .brand { gap: .4rem; }
-  .brand-text { font-size: .95rem; letter-spacing: .03em; white-space: nowrap; }
-  .site-nav { gap: 0; }
-  .site-nav a { padding: .4rem .3rem; font-size: .85rem; }
-  .theme-toggle { width: 1.8rem; }
-}
-@media (max-width: 400px) {
-  .brand-seal { display: none; }
-}
-/* 再窄连站名也放不下，只留站印 */
-@media (max-width: 365px) {
-  .brand-seal { display: inline-grid; }
-  .brand-text { display: none; }
+  .header-tools { order: 2; margin-left: auto; padding-bottom: .35rem; }
+  .site-nav {
+    order: 3; flex: 1 0 100%; justify-content: space-between; gap: 0; margin-left: 0;
+    padding: .1rem 0 .2rem; border-top: 1px solid var(--line-soft);
+  }
+  .site-nav a { flex: 1 1 0; text-align: center; padding: .42rem .15rem; font-size: .88rem; }
+  .site-nav a[aria-current="page"]::after { left: 22%; right: 22%; bottom: .08rem; }
+  .site-nav .nav-sep { height: .85rem; margin: 0 .15rem; }
 }
 
 /* ---------- 页脚 ---------- */
@@ -2571,6 +2604,302 @@ a.news-cat:hover { border-color: var(--news, var(--gold)); }
   .news-entry-feature .news-entry-title { font-size: 1rem; }
   .news-entry-feature .news-entry-en { display: none; }
 }
+
+/* 正史目录：沿用天书时间轴，按 YC 年分节，左栏写月日；新伊甸新闻用青色，交叉列入的公告用杂报灰，其余 lore 站文章明黄 */
+.lore-col-site, .news-chip-lore { --news: var(--tianshu); }
+.lore-col-new-eden-news, .news-chip-new-eden-news { --news: var(--lore-news); }
+.lore-col-cross, .news-chip-lore.news-chip-misc { --news: var(--news-misc); }
+.lore-feed { --when: 4.3rem; }
+.lore-feed .news-when { font-size: .95rem; padding-top: .8rem; }
+.lore-feed .news-month-n { font-family: var(--mono); letter-spacing: .06em; }
+.lore-entry-meta { gap: .2rem .5rem; font-size: .74rem; }
+.lore-entry-meta > span:last-child { font-family: var(--mono); }
+@media (max-width: 640px) {
+  .lore-feed { --when: 3.3rem; }
+  .lore-feed .news-when { font-size: .78rem; }
+  /* 手机上封面铺满整张卡作背景，文字压在底部渐暗层上；图上文字深浅主题都用浅色 */
+  .lore-feed .news-entry-feature .news-entry-box:has(> .news-entry-cover) { grid-template-columns: minmax(0, 1fr); }
+  .lore-feed .news-entry-feature .news-entry-box > .news-entry-cover,
+  .lore-feed .news-entry-feature .news-entry-box:has(> .news-entry-cover) > .news-entry-body { grid-area: 1 / 1; }
+  .lore-feed .news-entry-feature .news-entry-cover { border: 0; transition: transform .3s; }
+  .lore-feed .news-entry-feature .news-entry-box:has(> .news-entry-cover) > .news-entry-body {
+    position: relative; justify-content: flex-end; min-height: 11rem; padding: 3rem .8rem .7rem;
+    background: linear-gradient(to bottom, rgb(0 0 0 / 0) 0, rgb(0 0 0 / .5) 40%, rgb(0 0 0 / .86) 100%);
+    color: #f3f1ea; text-shadow: 0 1px 3px rgb(0 0 0 / .6);
+  }
+  .lore-feed .news-entry-box:has(> .news-entry-cover) .news-meta { color: rgb(243 241 234 / .78); }
+  .lore-feed .news-entry-box:has(> .news-entry-cover) .news-cat { border-color: color-mix(in srgb, var(--news) 75%, #fff); background: rgb(0 0 0 / .45); color: #f3f1ea; text-shadow: none; }
+  .lore-feed .news-entry-box:has(> .news-entry-cover) .news-entry-excerpt { color: rgb(243 241 234 / .82); }
+  .lore-feed .news-entry-feature:hover .news-entry-cover { transform: scale(1.04); }
+}
+
+/* 折扣板块：顶部固定“正在进行／即将开始”（不受筛选影响），下方紧凑筛选栏 + 12 张月份对比卡（桌面 3×4，无横向滚动）+ 按年明细。
+   无 JS 时标签直链明细、历年全展开；有 JS 时支持档位/商品筛选、仅看高价值、本月高亮与详情浮层 */
+.page-deals { --cal: var(--text-dim); }
+.cal-t-plex { --cal: var(--cal-plex); }
+.cal-t-omega { --cal: var(--cal-omega); }
+.cal-t-mct { --cal: var(--cal-mct); }
+.cal-t-consumable { --cal: var(--cal-consumable); }
+.cal-t-pack { --cal: var(--cal-pack); }
+.cal-t-booster { --cal: var(--cal-booster); }
+.cal-chip { --news: var(--cal); }
+.news-period {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .6rem;
+  margin: .35rem 0 0; font-size: .82rem; color: var(--text-dim);
+}
+.news-period-name { font-weight: 700; color: var(--text); }
+.news-period a { color: var(--deals); }
+
+.cal-now {
+  display: grid; gap: .7rem 1.4rem; margin: 0 0 1rem; padding: .8rem 1rem;
+  border: 1px solid var(--line-soft); border-radius: var(--radius);
+  background: var(--surface); box-shadow: var(--panel-shadow);
+}
+.cal-now[hidden] { display: none; }
+.cal-now h2 {
+  display: flex; align-items: baseline; gap: .45rem; margin: 0 0 .35rem;
+  font-size: .9rem; letter-spacing: .08em; color: var(--deals);
+}
+.cal-now h2 small { font-weight: 400; font-size: .72rem; letter-spacing: 0; color: var(--text-faint); }
+.cal-now ul { display: grid; gap: .3rem; margin: 0; padding: 0; list-style: none; font-size: .85rem; }
+.cal-now li { display: flex; align-items: baseline; gap: .5rem; min-width: 0; padding-left: .5rem; border-left: 3px solid var(--cal); }
+.cal-now li a { flex: 1 1 auto; min-width: 0; overflow: hidden; color: var(--text); text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+.cal-now li a:hover { color: var(--deals); }
+.cal-now li small { flex: none; font-family: var(--mono); font-size: .74rem; color: var(--text-faint); }
+.cal-now li.is-none { border-left-color: var(--line); color: var(--text-faint); }
+@media (min-width: 720px) { .cal-now { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.deals-main { min-width: 0; }
+.deals-main .news-month { padding-left: 0; }
+.deals-main [hidden] { display: none !important; }
+
+/* 筛选与跳转工具栏 */
+.deals-controls {
+  display: grid; gap: .55rem; margin: 0 0 1.25rem; padding: .75rem .95rem;
+  border: 1px solid var(--line-soft); border-radius: var(--radius);
+  background: var(--surface); box-shadow: var(--panel-shadow);
+}
+.deals-control-row { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem .7rem; }
+.deals-control-label {
+  flex: none; min-width: 2.2rem;
+  font-size: .76rem; font-weight: 700; letter-spacing: .12em; color: var(--text-faint);
+}
+.deals-controls .tag-bar { flex: 1 1 auto; margin: 0; }
+.deal-tier-btn-high { --news: var(--zhu); }
+.deal-tier-btn-niche { --news: var(--gold); }
+.deal-tier-btn-low { --news: var(--text-dim); }
+.deal-tier-btn-gift { --news: var(--lore); }
+.deal-tier-btn.is-active {
+  border-color: color-mix(in srgb, var(--news) 65%, transparent);
+  background: color-mix(in srgb, var(--news) 18%, var(--bg-raised));
+  color: var(--text);
+}
+.deal-high-only {
+  margin-left: .25rem;
+  border-color: color-mix(in srgb, var(--zhu) 55%, transparent);
+  color: var(--zhu);
+}
+.deal-high-only:hover { background: color-mix(in srgb, var(--zhu) 14%, var(--bg-raised)); }
+.deal-high-only.is-active {
+  border-color: var(--zhu); background: var(--zhu); color: #fff; font-weight: 700;
+}
+.deals-control-foot {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.2rem;
+  padding-top: .5rem; border-top: 1px solid var(--line-soft);
+}
+.deals-jump { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .6rem; font-size: .82rem; }
+.deals-jump a {
+  padding: .12rem .45rem; border: 1px solid var(--line-soft); border-radius: 999px;
+  font-family: var(--mono); color: var(--text-dim); text-decoration: none;
+}
+.deals-jump a:hover { border-color: var(--deals); color: var(--deals); }
+.deals-jump a small { margin-left: .25rem; font-size: .7rem; color: var(--text-faint); }
+.cal-legend { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .85rem; margin: 0; font-size: .74rem; color: var(--text-dim); }
+.cal-key { display: inline-flex; align-items: center; gap: .3rem; }
+.cal-key::before { content: ""; display: inline-block; width: 1.05rem; height: .62rem; border-radius: 2px; }
+.cal-key-high::before { border-left: 3px solid var(--zhu); background: color-mix(in srgb, var(--zhu) 30%, var(--bg-raised)); }
+.cal-key-gift::before { width: .5rem; height: .5rem; border-radius: 50%; background: var(--lore); }
+.cal-key-cont::before { border: 1px dashed var(--text-dim); border-left-width: 2px; opacity: .7; }
+.deals-control-foot .filter-status { margin: 0 0 0 auto; font-size: .8rem; color: var(--deals); font-weight: 700; }
+
+/* 12 张月份对比卡：移动端 1 列、平板 2 列、桌面 3 列，彻底无横向滚动；
+   平板及以上通过 CSS subgrid 让同一横排卡片的同一年份行严格对齐 */
+.deals-months {
+  display: grid; gap: .85rem; margin: 0 0 2rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 720px) { .deals-months { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1080px) { .deals-months { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+.deal-month-card {
+  display: flex; flex-direction: column; min-width: 0;
+  padding: .75rem .85rem .7rem;
+  border: 1px solid var(--line-soft); border-radius: var(--radius);
+  background: var(--surface); box-shadow: var(--panel-shadow);
+  transition: border-color .16s ease;
+}
+@supports (grid-template-rows: subgrid) {
+  @media (min-width: 720px) {
+    .deals-months { row-gap: 0; }
+    .deal-month-card {
+      display: grid;
+      grid-row: span var(--deal-rows, 7);
+      grid-template-rows: subgrid;
+      row-gap: 0;
+      margin-bottom: .85rem;
+    }
+  }
+}
+.deal-month-card:hover { border-color: var(--line); }
+.deal-month-card.is-now {
+  border-color: color-mix(in srgb, var(--zhu) 60%, var(--line-soft));
+  border-top: 2px solid var(--zhu);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--zhu) 9%, var(--bg-raised)), var(--bg-raised) 48%);
+}
+.deal-month-head {
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+  padding-bottom: .5rem; margin-bottom: .3rem; border-bottom: 1px solid var(--line-soft);
+}
+.deal-month-title {
+  display: inline-flex; align-items: center; gap: .4rem; margin: 0;
+  font-family: var(--serif); font-size: 1.08rem; font-weight: 700; letter-spacing: .04em; color: var(--text);
+}
+.deal-now-badge {
+  padding: .05rem .38rem; border-radius: 3px;
+  background: var(--zhu); color: #fff;
+  font-family: var(--sans); font-size: .68rem; font-weight: 700; letter-spacing: .06em;
+}
+.deal-month-heat {
+  display: inline-flex; align-items: center; gap: .38rem;
+  font-family: var(--mono); font-size: .72rem; color: var(--text-faint);
+}
+.deal-month-heat.lv2, .deal-month-heat.lv3, .deal-month-heat.lv4 { color: var(--zhu); font-weight: 700; }
+.deal-month-heat.lv1 { color: var(--text-dim); }
+.deal-heat-dots { display: inline-flex; gap: 2px; }
+.deal-heat-dots i {
+  display: block; width: 5px; height: 9px; border-radius: 1.5px;
+  background: var(--line);
+}
+.deal-heat-dots i.on { background: var(--zhu); }
+.deal-month-heat.lv1 .deal-heat-dots i.on { background: color-mix(in srgb, var(--zhu) 65%, var(--bg-raised)); }
+
+.deal-year-row {
+  display: grid; grid-template-columns: 2.7rem minmax(0, 1fr); align-items: start; gap: .45rem;
+  padding: .38rem 0; border-top: 1px solid color-mix(in srgb, var(--line-soft) 65%, transparent);
+}
+.deal-month-head + .deal-year-row { border-top: 0; padding-top: .25rem; }
+.deal-year-label {
+  padding-top: .16rem; font-family: var(--mono); font-size: .78rem; font-weight: 700; color: var(--text-faint);
+}
+.deal-month-head + .deal-year-row .deal-year-label { color: var(--text); }
+.deal-year-chips {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .32rem; min-height: 1.6rem; min-width: 0;
+}
+.deal-year-chips.is-pre {
+  padding: .1rem .35rem; border-radius: 3px;
+  background: repeating-linear-gradient(135deg, var(--line-soft) 0 1px, transparent 1px 5px);
+}
+.deal-empty { display: none; font-size: .74rem; color: var(--text-faint); }
+.deal-year-chips.is-empty .deal-empty { display: inline; }
+
+/* 折扣标签：高价值最醒目，小众次之，低价值淡显，赠送收成圆点行内标 */
+.deal-chip {
+  display: inline-flex; align-items: baseline; gap: .3rem; max-width: 100%;
+  padding: .18rem .45rem; border-radius: 4px; text-decoration: none; line-height: 1.35;
+  transition: background-color .14s ease, border-color .14s ease, opacity .14s ease;
+}
+.deal-chip b { font-size: .78rem; font-weight: 700; white-space: nowrap; }
+.deal-chip small { font-family: var(--mono); font-size: .68rem; color: var(--text-dim); white-space: nowrap; }
+.deal-chip-high {
+  border: 1px solid color-mix(in srgb, var(--cal) 58%, transparent);
+  border-left: 3px solid var(--cal);
+  background: color-mix(in srgb, var(--cal) 26%, var(--bg-raised));
+  color: var(--text);
+}
+.deal-chip-high b { color: var(--text); }
+.deal-chip-niche {
+  border: 1px solid color-mix(in srgb, var(--cal) 30%, transparent);
+  border-left: 2px solid var(--cal);
+  background: color-mix(in srgb, var(--cal) 11%, var(--bg-raised));
+  color: var(--text);
+}
+.deal-chip-niche b { font-weight: 600; }
+.deal-chip-low {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text-dim);
+}
+.deal-chip-low b { font-weight: 500; color: var(--text-dim); }
+.deal-chip-gift {
+  padding: .14rem .35rem; border: 1px solid transparent; background: transparent; color: var(--text-dim);
+}
+.deal-chip-gift b { font-weight: 500; font-size: .74rem; }
+.deal-dot {
+  flex: none; align-self: center; width: .48rem; height: .48rem; border-radius: 50%;
+  background: var(--cal);
+}
+.deal-chip.is-cont { border-style: dashed; opacity: .62; }
+.deal-chip:hover {
+  opacity: 1;
+  border-color: var(--cal);
+  background: color-mix(in srgb, var(--cal) 34%, var(--bg-raised));
+  color: var(--text);
+}
+.deal-chip:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+
+/* 明细：按年折叠，按月分组 */
+.deals-archive { margin-top: .4rem; }
+.cal-year { margin-top: 1.2rem; scroll-margin-top: 5rem; }
+.cal-year > summary { cursor: pointer; list-style: none; }
+.cal-year > summary::-webkit-details-marker { display: none; }
+.cal-year > summary::after { content: "▾"; margin-left: auto; font-size: .8rem; color: var(--text-faint); }
+.cal-year:not([open]) > summary::after { content: "▸"; }
+.cal-year > summary:hover .news-month-n { color: var(--deals); }
+.cal-month { margin: .6rem 0 1rem; }
+.cal-month-h { margin: 0 0 .35rem; font-family: var(--serif); font-size: .98rem; }
+.cal-items { display: grid; gap: .45rem; margin: 0; padding: 0; list-style: none; }
+@media (min-width: 720px) { .cal-items { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.cal-item {
+  min-width: 0; padding: .5rem .65rem; border: 1px solid var(--line-soft); border-left: 3px solid var(--cal);
+  border-radius: var(--radius); background: var(--bg-raised); scroll-margin-top: 5rem;
+}
+.cal-item:target, .cal-item.is-flash { outline: 2px solid color-mix(in srgb, var(--cal) 65%, transparent); outline-offset: 1px; }
+.cal-item p { margin: 0; }
+.cal-item-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .1rem .5rem; }
+.cal-item-name { font-weight: 700; color: var(--text); }
+a.cal-item-name { text-decoration: none; }
+a.cal-item-name:hover { color: var(--deals); text-decoration: underline; }
+.cal-item-en { font-size: .74rem; color: var(--text-faint); }
+.cal-item p.cal-item-meta {
+  display: flex; flex-wrap: wrap; align-items: center; gap: .2rem .5rem; margin-top: .25rem;
+  font-size: .74rem; color: var(--text-dim);
+}
+.cal-item-meta time { font-family: var(--mono); color: var(--text); }
+.cal-tag { padding: 0 .4rem; border: 1px solid color-mix(in srgb, var(--cal) 55%, transparent); border-radius: 999px; line-height: 1.5; color: var(--cal); }
+.cal-tier { font-weight: 700; color: var(--text-faint); }
+.cal-tier-high { color: var(--zhu); }
+.cal-tier-niche { color: var(--text-dim); }
+.cal-item p.cal-item-line { margin-top: .25rem; font-size: .82rem; line-height: 1.6; }
+.cal-item-line b { margin-right: .45rem; font-weight: 400; font-size: .72rem; letter-spacing: .1em; color: var(--text-faint); }
+
+.cal-pop { position: absolute; z-index: 40; width: min(22rem, calc(100vw - 1.5rem)); margin: 0; padding: 0; list-style: none; }
+.cal-pop .cal-item { padding-right: 2rem; box-shadow: 0 14px 32px -14px rgba(0, 0, 0, .7); }
+.cal-pop.is-group {
+  display: grid; gap: .4rem; max-height: min(65vh, 32rem); overflow-y: auto;
+  padding: .45rem; border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--bg); box-shadow: 0 16px 36px -12px rgba(0, 0, 0, .75);
+}
+.cal-pop-head {
+  display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+  padding: .05rem .2rem .2rem; font-size: .78rem; font-weight: 700; color: var(--text-dim);
+}
+.cal-pop.is-group .cal-pop-close { position: static; flex: none; }
+.cal-pop.is-group .cal-item { padding-right: .65rem; box-shadow: none; }
+.cal-pop-close {
+  position: absolute; top: .3rem; right: .35rem; width: 1.6rem; height: 1.6rem; padding: 0;
+  border: 0; border-radius: 4px; background: transparent; color: var(--text-dim); font-size: 1rem; cursor: pointer;
+}
+.cal-pop-close:hover { color: var(--text); background: var(--line-soft); }
 
 /* ---------- 长文阅读：锚点偏移、右侧目录（TOC）、可折叠块（::: 折叠）与小分页（::: 分页） ---------- */
 /* html 已有 scroll-padding-top: 4.5rem；这里只留微小余量，避免两者相加把落点推太低 */

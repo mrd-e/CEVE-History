@@ -10,6 +10,8 @@ import { identityNames } from './scripts/person-identity.mjs';
 import { RADAR_AXES } from './scripts/person-radar.mjs';
 import { alignmentCounts } from './scripts/person-alignment.mjs';
 import { ctfImage, NEWS_CATEGORIES, newsCards, newsDayAnchors } from './scripts/news.mjs';
+import { LORE_COLUMNS, LORE_CROSS_COLUMN, loreCards } from './scripts/news-lore.mjs';
+import { calendarPage, loadCalendar } from './scripts/news-calendar.mjs';
 import { articleContainers, prepareArticle } from './scripts/article-prose.mjs';
 
 // 所有日期按 EVE 时间（UTC）显示
@@ -148,7 +150,27 @@ export default function (eleventyConfig) {
   );
   // 目录卡片：合辑式补丁说明按天拆卡，链到同页锚点
   eleventyConfig.addCollection('newsCards', api => newsCards(api.getFilteredByGlob('src/news/*.md')));
+  // 正史集合：lore 站文章加交叉列入的天书公告（lore: true），同样按发布日期倒序
+  const loreItems = api => [
+    ...api.getFilteredByGlob('src/news/lore/*.md'),
+    ...api.getFilteredByGlob('src/news/*.md').filter(item => item.data.lore === true),
+  ];
+  eleventyConfig.addCollection('lore', api =>
+    loreItems(api).sort((a, b) => String(b.data.published).localeCompare(String(a.data.published)) || a.url.localeCompare(b.url)),
+  );
+  eleventyConfig.addCollection('loreCards', api => loreCards(loreItems(api)));
+  eleventyConfig.addGlobalData('loreColumns', [...LORE_COLUMNS, LORE_CROSS_COLUMN]);
   eleventyConfig.addGlobalData('newsCategories', NEWS_CATEGORIES);
+  // 折扣：清单不是页面，构建时算好 12 个月跨年对照、明细与天书短名反查
+  const calendarFile = 'src/news/calendar.json';
+  eleventyConfig.addWatchTarget(calendarFile);
+  eleventyConfig.addCollection('deals', () => (fs.existsSync(calendarFile) ? loadCalendar(calendarFile).entries : []));
+  eleventyConfig.addGlobalData('newsCalendar', () => (fs.existsSync(calendarFile) ? calendarPage(loadCalendar(calendarFile)) : null));
+  eleventyConfig.addFilter('navCurrent', (pageUrl, sectionUrl) => {
+    const p = String(pageUrl ?? '');
+    if (sectionUrl === '/') return p === '/' || p.startsWith('/p/') || p.startsWith('/tags/');
+    return p === sectionUrl || p.startsWith(sectionUrl);
+  });
   eleventyConfig.addFilter('ctfImage', ctfImage);
   eleventyConfig.addFilter('newsDayAnchors', newsDayAnchors);
   eleventyConfig.addFilter('prepareArticle', prepareArticle);

@@ -5,6 +5,7 @@ source: 'https://www.eveonline.com/news/view/eve-operation-epiphany'
 published: '2023-08-22'
 officialTags:
   - in-game-events
+lore: true
 cover: >-
   https://images.ctfassets.net/7lhcm73ukv5p/2XZyAhLHmjG84wsLYA8s0v/2e794727bd0ab634407742d638431a05/Screenshot_Copy_1920x1080.jpg
 translation: official

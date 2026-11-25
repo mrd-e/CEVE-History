@@ -58,6 +58,8 @@ test('validateNews：合格无错，逐项报错', () => {
   assert.ok(badToc.some(e => e.includes('toc 只能是')));
   assert.ok(badToc.some(e => e.includes('tocDepth 只能是')));
   assert.ok(validateNews(valid(), '  ', 'sample-news').some(e => e.includes('正文为空')));
+  assert.deepEqual(validateNews({ ...valid(), lore: true }, '正文', 'sample-news'), []);
+  assert.ok(validateNews({ ...valid(), lore: 'yes' }, '正文', 'sample-news').some(e => e.includes('lore 只能写 true')));
 
   const patchSlug = 'patch-notes-version-24-02';
   const patchMeta = () => ({

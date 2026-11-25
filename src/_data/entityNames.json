@@ -4573,6 +4573,9 @@
     "98771815": {
       "name": "IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII"
     },
+    "98772103": {
+      "name": "Nuotai biology"
+    },
     "98772174": {
       "name": "Wind of Void"
     },
@@ -10289,6 +10292,10 @@
       "name": "HMB Heavy Industries",
       "ticker": "HMBHI"
     },
+    "99014601": {
+      "name": "Dangerous play",
+      "ticker": "DNG"
+    },
     "99014605": {
       "name": "Azur Lane Confederation",
       "ticker": "ALC"
@@ -10608,6 +10615,10 @@
     "99015175": {
       "name": "Dust Up",
       "ticker": "6SHOT"
+    },
+    "99015181": {
+      "name": "Atra Dominus",
+      "ticker": "ATRA"
     },
     "99015191": {
       "name": "Kaguya Best Girl",

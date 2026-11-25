@@ -5,6 +5,7 @@ source: >-
   https://www.eveonline.com/news/view/breaking-classified-guristas-documents-discovered
 published: '2023-07-11'
 officialTags: []
+lore: true
 cover: >-
   https://images.ctfassets.net/7lhcm73ukv5p/cBtZ7bdg5VAKb1Ly21Ca9/f72304c74e609885f08205517b25db35/ClassifiedKeyart1920.jpg
 translation: official

@@ -1,15 +1,19 @@
 #!/usr/bin/env node
-// 天书工作台：把官方新闻（官方中文版或本站译文）写成 src/news/<短名>.md，并校验全部页面。
+// 天书工作台：把官方新闻（官方中文版或本站译文）写成 src/news/<短名>.md，正史文章写成 src/news/lore/<短名>.md，并校验天书、正史与折扣清单。
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
 import {
-  articleMeta, fetchArticle, newsDocument, officialChinese, parseNewsUrl, splitTitle, validateNews,
+  articleMeta, fetchArticle, newsCategory, newsDocument, officialChinese, parseNewsUrl, splitTitle, validateNews,
 } from './news.mjs';
+import { loadCalendar, missingCalendar, validateCalendar } from './news-calendar.mjs';
+import { fetchLore, loreDocument, validateLore } from './news-lore.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const NEWS_DIR = path.join(ROOT, 'src', 'news');
+const LORE_DIR = path.join(NEWS_DIR, 'lore');
+const CALENDAR_FILE = path.join(NEWS_DIR, 'calendar.json');
 const INSTRUCTION_FILES = new Set(['AGENTS.md', 'CLAUDE.md']);
 
 const HELP = `用法：npm run news -- <命令>
@@ -20,10 +24,14 @@ const HELP = `用法：npm run news -- <命令>
       用一篇中文 Markdown（首行“# 标题”）写成页面，元数据取自英文原文；默认 translation: site。
   import <目录> --registry <登记.jsonl> [--force]
       批量导入官方中文 Markdown：登记表每行含 local_path 与 url（中文页链接），按文件名匹配。
+  lore <universe.eveonline.com 链接> --out <草稿.md>
+      抓取正史英文原文，写出待译草稿（首行“# 英文标题”）。
+  lore <universe.eveonline.com 链接> --file <中文.md> [--force]
+      用译文（首行“# 中文标题”）写成 src/news/lore/<短名>.md，元数据取自原文；translation: site。
   check
-      校验 src/news/ 下全部页面。
+      校验 src/news/、src/news/lore/ 与折扣清单。
 
-已存在的页面默认不覆盖，加 --force 才重写（保留手工指定的 category）。`;
+已存在的页面默认不覆盖，加 --force 才重写（保留手工指定的 category、lore、toc、tocDepth）。`;
 
 function parseArgs(argv) {
   const out = { _: [] };
@@ -53,6 +61,7 @@ function writePage(slug, data, body, force) {
     if (!force) return 'skipped';
     const old = matter(readFileSync(file, 'utf8')).data;
     if (old.category) data = { ...data, category: old.category };
+    if (old.lore !== undefined) data = { ...data, lore: old.lore };
     if (old.toc !== undefined) data = { ...data, toc: old.toc };
     if (old.tocDepth !== undefined) data = { ...data, tocDepth: old.tocDepth };
   }
@@ -131,26 +140,73 @@ async function cmdImport(args) {
   return result.failed.length ? 1 : 0;
 }
 
+async function cmdLore(args) {
+  const url = args._[1] ?? '';
+  if (!args.out === !args.file) throw new Error('lore 需要 --out <草稿.md>（抓取英文稿）或 --file <中文.md>（写成页面），二选一');
+  const { meta, slug, body } = await fetchLore(url);
+  if (args.out) {
+    writeFileSync(args.out, `# ${meta.titleEn}\n\n${body}\n`, 'utf8');
+    console.log(JSON.stringify({ slug, status: 'draft', file: args.out, meta }));
+    return 0;
+  }
+  const { title, body: zh } = splitTitle(readFileSync(args.file, 'utf8'));
+  if (!title) throw new Error(`${args.file}：首行必须是“# 中文标题”`);
+  const file = path.join(LORE_DIR, `${slug}.md`);
+  if (existsSync(file) && !args.force) {
+    console.log(JSON.stringify({ slug, status: 'skipped', file: path.relative(ROOT, file) }));
+    return 0;
+  }
+  const data = { title, ...meta, translation: 'site' };
+  const errors = validateLore(data, zh, slug);
+  if (errors.length) throw new Error(errors.join('\n'));
+  mkdirSync(LORE_DIR, { recursive: true });
+  writeFileSync(file, loreDocument(data, zh), 'utf8');
+  console.log(JSON.stringify({ slug, status: 'written', file: path.relative(ROOT, file) }));
+  return 0;
+}
+
+const markdownPages = dir => (existsSync(dir) ? readdirSync(dir).filter(f => f.endsWith('.md') && !INSTRUCTION_FILES.has(f)) : []);
+
 function cmdCheck() {
-  if (!existsSync(NEWS_DIR)) return 0;
   const errors = [];
-  let count = 0;
-  for (const name of readdirSync(NEWS_DIR).filter(f => f.endsWith('.md') && !INSTRUCTION_FILES.has(f))) {
-    count++;
-    const { data, content } = matter(readFileSync(path.join(NEWS_DIR, name), 'utf8'));
-    errors.push(...validateNews(data, content, name.replace(/\.md$/, '')));
+  const newsPages = [];
+  const pages = (dir, validate, seen) => {
+    const names = markdownPages(dir);
+    for (const name of names) {
+      const slug = name.replace(/\.md$/, '');
+      const { data, content } = matter(readFileSync(path.join(dir, name), 'utf8'));
+      errors.push(...validate(data, content, slug));
+      seen?.push({ slug, published: data.published, cat: newsCategory(data)?.key });
+    }
+    return names.length;
+  };
+  const news = pages(NEWS_DIR, validateNews, newsPages);
+  const lore = pages(LORE_DIR, validateLore);
+  let calendar = null;
+  if (existsSync(CALENDAR_FILE)) {
+    try {
+      calendar = loadCalendar(CALENDAR_FILE);
+      errors.push(...validateCalendar(calendar, new Set(newsPages.map(p => p.slug))));
+    } catch (error) {
+      errors.push(`calendar.json：读取失败：${error.message}`);
+    }
   }
   if (errors.length) {
     console.error(errors.join('\n'));
     return 1;
   }
-  console.log(`天书 ${count} 篇校验通过`);
+  const entries = calendar ? `、折扣 ${calendar.entries.length} 项` : '';
+  console.log(`天书 ${news} 篇、正史 ${lore} 篇${entries}校验通过`);
+  if (calendar) {
+    const missing = missingCalendar(calendar, newsPages);
+    if (missing.length) console.warn(`折扣未登记的促销公告 ${missing.length} 篇：\n${missing.join('\n')}`);
+  }
   return 0;
 }
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const commands = { official: cmdOfficial, add: cmdAdd, import: cmdImport, check: cmdCheck };
+  const commands = { official: cmdOfficial, add: cmdAdd, import: cmdImport, lore: cmdLore, check: cmdCheck };
   const run = commands[args._[0]];
   if (!run) {
     console.log(HELP);

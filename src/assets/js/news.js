@@ -6,6 +6,7 @@ const years = [...document.querySelectorAll('.news-years a[data-year]')];
 const chips = [...document.querySelectorAll('#news-cats .chip')];
 const input = document.getElementById('filter');
 const status = document.getElementById('filter-status');
+const unit = list?.dataset.unit || '卷';
 
 const known = chips.map(c => c.dataset.cat);
 const params = new URLSearchParams(location.search);
@@ -36,7 +37,7 @@ function apply() {
   const all = cats.size === known.length;
   const filtered = !all || words.length;
   status.hidden = !filtered;
-  status.textContent = filtered ? `共 ${count} 卷` : '';
+  status.textContent = filtered ? `共 ${count} ${unit}` : '';
 
   const url = new URL(location.href);
   url.searchParams.delete('t');

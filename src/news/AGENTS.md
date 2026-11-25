@@ -12,4 +12,12 @@
   - **二级标题独占**：全篇**只有**每日补丁标题允许使用 `##`，且必须严格写成 `## **YYYY-MM-DD.N补丁说明**`（编号与“补丁说明”间无空格，同一天多更按 `.1`、`.2` 递增，不得重号）。目录页 `/news/` 按此拆分为每日更新卡片并生成 `#dYYYY-MM-DD-N` 锚点，自动收录脚本（`scripts/ci-news/sync.py`）也按此拆节复用译文。
   - **当日内部降级**：当天补丁内的分组标题（含官网原文误用 H2 的“功能与改动”“缺陷修复”等）一律降为 `###` 及以下；正文中任何非每日标题的 `##` 都会截断当日卡片摘要，被 `news:check` 拦截。
   - **增量滚动维护**：同版本新补丁总在顶部追加，`published` 随官网最近更新日期前进；人工补录或修订时按日期小节增量维护，保留未变动的已发布小节译文，不整篇重译。若某日参考了志愿者译文，出处说明挂在对应日期小节末尾，不挂在文末最旧一日或易变动的前言中。自动收录机制见 [天书自动收录](../../docs/news-automation.md)。
-- 校验用 `npm run news:check`；页面核读目录 `/news/` 与对应详情页。
+- **正史板块**（`/lore/`）收 universe.eveonline.com 官方背景故事，只在点名时逐篇收录，不批量补译；栏目照官方分类（`scripts/news-lore.mjs` 的 `LORE_COLUMNS`），不自创。
+  - 每篇一个文件 `src/news/lore/<短名>.md`，短名取 lore 链接末段，由 `news-workbench lore` 生成。字段：`title`、`titleEn`、`source`（lore 原文链接）、`yc`（`YC128-11-09`）、`published`（与 `yc` 同日的公历）、`column`（官方分类键）、可选 `cover`、`translation`（`site`）。工具写入，不手改；正文可人工订正。
+  - eveonline.com 上的 lore 类新闻仍按天书公告收录，在该篇加 `lore: true` 交叉列入正史，网址和分类不变。
+- **折扣板块**（`/deals/`）只收官方商城折扣与赠送，纯涂装、SKINR 与游戏内活动不收；数据只在 `src/news/calendar.json`，自己逐条撰写，不导入外部表，不写来源或备注字段。
+  - `entries` 每项：`key`（`<开始日期>-<英文短词>`）、`name`、可选 `nameEn`、`deal`（优惠类型，取值与分档见 `scripts/news-calendar.mjs` 的 `CALENDAR_DEALS`）、`off`（最高减免百分比，七五折写 25；PLEX 必写，赠送不写）、`start`、可选 `end`、可选 `channel`（`web`／`game`／`both`）、`discount`、`bonus`、`news`。
+  - **赠送与买赠边界**：`gift-omega`、`gift-plex` 只收免费领取及象征性极低价领取（如 10 PLEX 换 7 天欧米伽），不写 `off` 与 `discount`。原价买某商品附赠另一商品（如买欧米伽送 PLEX、买多人物训练送欧米伽）不算赠送，按实付主商品和支付方式归类（不硬折算 `off`），赠品写进 `bonus`。
+  - **渠道与支付方式**：官网简中常把网页商城（EVE Store，现金结算）也译成“新伊甸商城”，不得只看中文商城名填 `channel` 或区分现金／PLEX 购买；以计价货币（美元／现金 → `web`；PLEX → `game`）、商城链接（`store.eveonline.com` → `web`）或英文原文为准。
+  - 时间一律 UTC，写 `YYYY-MM-DD` 或 `YYYY-MM-DDTHH:MM`；只写日期的结束算到当天 23:59。不收 2021-01-01 以前开始的。同一次折扣只记一条；`news` 是天书短名或短名数组，首个为明细里链接的正式公告，其余（预告等）一并算已登记。
+- 校验用 `npm run news:check`（同时校验正史板块和折扣清单，并列出起点后未登记折扣的促销公告，只提示不拦截）；页面核读目录 `/news/`、`/lore/`、`/deals/` 与对应详情页。

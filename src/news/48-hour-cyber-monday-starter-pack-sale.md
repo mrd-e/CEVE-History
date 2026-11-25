@@ -1,5 +1,5 @@
 ---
-title: 网络星期一新手包48小时特卖！
+title: 赛博周一新手包48小时特卖！
 titleEn: 48-hour Cyber Monday Starter Pack Sale!
 source: 'https://www.eveonline.com/news/view/48-hour-cyber-monday-starter-pack-sale'
 published: '2023-12-02'
@@ -9,7 +9,7 @@ cover: >-
 translation: official
 ---
 
-### 赶紧来新伊甸商店体验网络星期一超值特卖！
+### 赶紧来新伊甸商店体验赛博周一超值特卖！
 
 所有飞行员在首次购买青铜和白银新手包时可享受六折折扣，首次购买黄金和铂金新手包可享受七折折扣。
 

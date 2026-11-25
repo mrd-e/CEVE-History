@@ -44,7 +44,16 @@
         "emblem": 1354830081
       }
     ],
-    "loss_source": "https://br.evetools.org/br/6ac24f0a11aba188f3fd1a56"
+    "loss_source": "https://br.evetools.org/br/6ac24f0a11aba188f3fd1a56",
+    "videos": [
+      {
+        "title": "出门没看天气预报，噩梦队在天象大劣里挣扎，我开乌鸦",
+        "url": "https://www.bilibili.com/video/BV1MzsV6nEKV/",
+        "author": "RaysGames",
+        "description": "FRT 老兵 FlyingBee 的乌鸦级第一视角，战斗结束后一个多小时就发布。他跟着噩梦队在 6L78-1 的蜜蜂主权里硬顶，本场掉了一条乌鸦级和一个太空舱；评论区有人追问为什么偏爱噩梦级。"
+      }
+    ],
+    "cover": "https://www.bilibili.com/video/BV1MzsV6nEKV/"
   },
   "br": {
     "sources": ["https://br.evetools.org/br/6ac24f0a11aba188f3fd1a56"],

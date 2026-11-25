@@ -234,7 +234,7 @@ export function splitTitle(markdown) {
   return m ? { title: m[1].trim(), body: normalizeBody(markdown) } : { title: '', body: normalizeBody(markdown) };
 }
 
-const FIELD_ORDER = ['title', 'titleEn', 'source', 'published', 'officialTags', 'category', 'cover', 'translation', 'toc', 'tocDepth'];
+const FIELD_ORDER = ['title', 'titleEn', 'source', 'published', 'officialTags', 'category', 'lore', 'cover', 'translation', 'toc', 'tocDepth'];
 
 /** 生成页面文件文本，字段顺序固定。 */
 export function newsDocument(data, body) {
@@ -250,6 +250,7 @@ const dayId = (date, n) => `d${date}-${n}`;
 export function validateNews(data, body, slug) {
   const errors = [];
   const fail = m => errors.push(`${slug}：${m}`);
+  if (data.lore !== undefined && data.lore !== true) fail('lore 只能写 true（交叉列入正史板块），不列入时删掉该字段');
   if (!data.title?.trim()) fail('缺少中文标题 title');
   if (!data.titleEn?.trim()) fail('缺少英文标题 titleEn');
   const parsed = parseNewsUrl(data.source);

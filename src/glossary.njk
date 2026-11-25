@@ -4,7 +4,8 @@ permalink: /glossary/index.html
 pageTitle: 术语表
 bodyClass: page-glossary
 ---
-<nav class="back"><a href="{{ '/' | url }}">← 返回目录</a></nav>
+{%- set backHref = '/' %}{% set backLabel = '返回目录' %}
+{% include "back.njk" %}
 <article class="glossary-page">
   <h1>术语表</h1>
   <p>列传里的蓝色词语可以点开解释。以下解释也可直接浏览；词义会随具体战斗和发言语境变化。</p>

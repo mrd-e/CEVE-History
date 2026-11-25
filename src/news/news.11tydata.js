@@ -13,5 +13,7 @@ export default {
     translationLabel: d => TRANSLATIONS[d.translation],
     sourceZh: d => (d.translation === 'official' ? newsPageUrl(d.page.fileSlug, 'zh') : null),
     year: d => String(d.published).slice(0, 4),
+    // 折扣清单里指向本篇的条目（正式公告或预告、后续公告）
+    calendar: d => d.newsCalendar?.byNews[d.page.fileSlug] ?? [],
   },
 };

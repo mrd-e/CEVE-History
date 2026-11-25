@@ -5,6 +5,7 @@ source: >-
   https://www.eveonline.com/news/view/breaking-ancient-jovian-stargates-discovered
 published: '2023-08-26'
 officialTags: []
+lore: true
 cover: >-
   https://images.ctfassets.net/7lhcm73ukv5p/5Pk8WBldZ0VBbhiLrgsMhH/b9bb3df3a39cc4fdc2fbfc51d208b1cb/gate.jpg
 translation: official

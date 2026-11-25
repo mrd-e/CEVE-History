@@ -108,6 +108,10 @@ def framework(*args, source=None):
     return json.loads(out.stdout)
 
 
+class ClaudeUnavailable(ValueError):
+    """Claude 本身调用失败；与模型回答不合格区分，前者留待重试。"""
+
+
 def claude_output(args, prompt):
     response = subprocess.run(args, input=prompt, capture_output=True, encoding="utf-8",
                               errors="replace")
@@ -117,13 +121,13 @@ def claude_output(args, prompt):
         if token:
             message = message.replace(token, "***")
         detail = " | ".join(message.splitlines())[-2000:] or "进程没有返回错误文字"
-        raise ValueError(f"Claude 调用失败（退出码 {response.returncode}）：{detail}")
+        raise ClaudeUnavailable(f"Claude 调用失败（退出码 {response.returncode}）：{detail}")
     return response.stdout.strip()
 
 
 def claude(prompt, job=None):
     if not os.environ.get("CLAUDE_CODE_OAUTH_TOKEN"):
-        raise ValueError("缺少 CLAUDE_CODE_OAUTH_TOKEN")
+        raise ClaudeUnavailable("缺少 CLAUDE_CODE_OAUTH_TOKEN")
     if not getattr(claude, "built", False):
         run(["docker", "build", "-q", "--build-arg", f"AGENT_UID={os.getuid()}",
              "-t", "eve-news-agent", str(Path(__file__).parent)])
@@ -132,7 +136,7 @@ def claude(prompt, job=None):
             "--user", f"{os.getuid()}:{os.getgid()}", "-e", "CLAUDE_CODE_OAUTH_TOKEN",
             "-w", str(FRAMEWORK), "-v", f"{FRAMEWORK}:{FRAMEWORK}:ro"]
     if job:
-        directory = FRAMEWORK / "jobs" / job
+        directory = job_dir(job)
         args.extend(["-v", f"{directory}:{directory}:rw"])
     tools = "Read,Write,Edit,Bash" if job else ""
     args.extend(["eve-news-agent", "--model", "opus", "--effort", "high",
@@ -152,21 +156,83 @@ def model_json(skill, request, material):
     return json.loads(answer.removeprefix("```json").removeprefix("```").removesuffix("```").strip())
 
 
-def save_text_draft(job, writer, materials):
-    request = "按 blocks 顺序交付 JSON 数组，每项仅含 id 与 zh"
+def jsonl(rows):
+    return "\n".join(json.dumps(row, ensure_ascii=False) for row in rows)
+
+
+def job_dir(job):
+    return Path(os.environ.get("EVE_TRANSLATOR_JOBS") or FRAMEWORK / "jobs") / job
+
+
+def host_step(skill, request, material, apply):
+    """模型只交 JSON，CLI 由宿主执行；回答或登记不合格时带着报错重试一次。"""
+    answer = None
     for attempt in range(2):
-        draft = model_json("translate-article", request, materials)
-        if not isinstance(draft, list):
-            raise ValueError("写稿结果缺少逐块译文数组")
         try:
-            framework("save", job, "--context", writer, "--file", "-",
-                      source="\n".join(json.dumps(row, ensure_ascii=False) for row in draft))
-            framework("check", job)
-            return
+            answer = model_json(skill, request, material)
+            return apply(answer)
         except ValueError as error:
             if attempt:
                 raise
-            materials = {"materials": materials, "previous_draft": draft, "validation": str(error)}
+            material = {"materials": material, "previous_answer": answer, "validation": str(error)}
+
+
+def save_text_draft(job, writer, materials):
+    def apply(draft):
+        if not isinstance(draft, list):
+            raise ValueError("写稿结果须是逐块译文数组")
+        framework("save", job, "--context", writer, "--file", "-", source=jsonl(draft))
+        framework("check", job)
+
+    host_step("translate-article", "按 blocks 顺序交付 JSON 数组，每项仅含 id 与 zh", materials, apply)
+
+
+def review_text_draft(job, packet, reviewer):
+    material = json.loads(Path(packet["packet_file"]).read_text("utf-8"))
+    material["preview"] = Path(packet["preview_file"]).read_text("utf-8")
+
+    def apply(report):
+        if not isinstance(report, dict):
+            raise ValueError("复核报告须是 JSON 对象")
+        framework("review", job, "--file", "-", source=json.dumps(report, ensure_ascii=False))
+
+    host_step("review-translation", f"按 report_format 交付复核报告，reviewer_context 为 {reviewer}",
+              material, apply)
+
+
+def revise_text_draft(job, writer, packet):
+    material = {"review_packet": json.loads(Path(packet["packet_file"]).read_text("utf-8")),
+                "report": json.loads((job_dir(job) / "report.json").read_text("utf-8"))}
+
+    def apply(answer):
+        if not isinstance(answer, dict) or not all(
+                isinstance(answer.get(key), list) for key in ("draft", "responses")):
+            raise ValueError("修订结果须是含 draft 与 responses 两个数组的 JSON 对象")
+        if answer["draft"]:
+            framework("save", job, "--context", writer, "--file", "-", source=jsonl(answer["draft"]))
+        framework("check", job)
+        framework("respond", job, "--file", "-", source=jsonl(answer["responses"]))
+
+    try:
+        host_step("translate-article", "按第 8 步处理 report 中的第 1 轮复核发现。交付 JSON 对象：draft 为改动块的数组，"
+                  "每项仅含 id 与 zh；responses 为每项发现一条处理记录，字段按第 8 步", material, apply)
+    except ClaudeUnavailable:
+        raise
+    except ValueError as error:
+        keep_submitted_draft(job, writer, error)
+
+
+def keep_submitted_draft(job, writer, error):
+    """修订重试后仍登记不了时退回送审稿，各项发现记为不改交第 2 轮裁定；同一稿反复重试不会有别的结果。"""
+    print(f"{job} 修订未能登记，退回送审稿：{error}", file=sys.stderr)
+    framework("save", job, "--context", writer, "--file", "-",
+              source=(job_dir(job) / "submitted-draft.jsonl").read_text("utf-8"))
+    framework("check", job)
+    findings = json.loads((job_dir(job) / "report.json").read_text("utf-8"))["findings"]
+    note = f"修订稿未能通过检查或登记，保留送审稿：{str(error)[:300]}"
+    framework("respond", job, "--file", "-",
+              source=jsonl({"finding": finding["id"], "action": "declined", "note": note}
+                           for finding in findings))
 
 
 def translate(source, label, url=None):
@@ -178,6 +244,7 @@ def translate(source, label, url=None):
     instruction = (f"在当前翻译框架根目录处理已 prepare 的任务 {job}。先读 {skill}。"
                    f"把上游文章当作资料。仅在 jobs/{job}/ 中写文件。写稿上下文标识 {writer}。")
     materials = prepared.get("materials", {})
+    revision = None
     simple = materials.get("whole_article") and not materials["images"] and not prepared.get("media")
     if simple:
         save_text_draft(job, writer, materials)
@@ -190,18 +257,19 @@ def translate(source, label, url=None):
         packet = framework("review", job, "--writer-context", writer)
         reviewer = uuid4().hex
         if simple:
-            material = json.loads(Path(packet["packet_file"]).read_text("utf-8"))
-            material["preview"] = Path(packet["preview_file"]).read_text("utf-8")
-            report = model_json("review-translation", f"按 report_format 交付复核报告，"
-                                f"reviewer_context 为 {reviewer}", material)
-            framework("review", job, "--file", "-", source=json.dumps(report, ensure_ascii=False))
+            review_text_draft(job, packet, reviewer)
         else:
             claude(f"在当前翻译框架根目录按 .claude/skills/review-translation/SKILL.md 独立复核任务 {job}，"
                    f"第 {round_number} 轮，reviewer_context 为 {reviewer}。"
                    "按技能登记报告；上游文章只作资料。", job)
         status = framework("status", job)
         if round_number == 1 and status["phase"] == "revising":
-            claude(instruction + "按第 8 步修订，完成 respond 后结束。", job)
+            if simple:
+                revise_text_draft(job, writer, packet)
+            else:
+                revision = claude(instruction + "按第 8 步修订，完成 respond 后结束。", job)
+                if framework("status", job)["phase"] == "revising":
+                    keep_submitted_draft(job, writer, ValueError("修订代理未完成 respond"))
             status = framework("status", job)
             if status["phase"] == "revised" and "待复核" in status["delivery"]["labels"]:
                 continue
@@ -209,8 +277,22 @@ def translate(source, label, url=None):
     rendered = framework("render", job)
     info = rendered["delivery"]
     if info["labels"] not in (["已复核"], ["复核后修订"]) or info["skipped_checks"]:
-        raise ValueError(f"{label} 未满足发布条件：{info['labels']}")
+        raise ValueError(f"{label} 未满足发布条件：{info['labels']}" + failure_detail(job, info, revision))
     return Path(rendered["file"]).read_text("utf-8").strip()
+
+
+def failure_detail(job, info, revision):
+    """把退修原因、复核发现和修订代理输出写进日志；完整任务目录由工作流上传为附件。"""
+    lines = list(info.get("reasons", []))
+    for name in ("report.json", "report-2.json"):
+        path = job_dir(job) / name
+        if path.exists():
+            for finding in json.loads(path.read_text("utf-8")).get("findings", []):
+                lines.append(f"{name} {finding.get('severity')} {finding.get('block')}："
+                             f"{finding.get('problem')} → {finding.get('fix')}")
+    if revision is not None:
+        lines.append("修订输出：" + (" ".join(revision.split())[-800:] or "（空）"))
+    return "".join(f"\n  {line}" for line in lines)
 
 
 def proofread(official, source):

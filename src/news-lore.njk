@@ -1,0 +1,66 @@
+---
+layout: base.njk
+pagination:
+  data: collections.loreCards
+  size: 100000
+  alias: items
+permalink: /lore/
+pageTitle: 正史
+pageDescription: EVE Online 官方背景故事中文版：新伊甸新闻、编年史、短篇故事与帝国势力设定，按游戏内 YC 纪年编排。
+bodyClass: page-news-index page-lore-index
+---
+{#- 没有正史文章时分页数据为空，本页不生成。 -#}
+<section class="intro news-intro">
+  <h1>正史</h1>
+  <p>新伊甸的正史，CCP 官方写的那一份：新伊甸新闻、编年史、短篇故事和帝国势力设定，按游戏内 YC 纪年排。逐篇收录，共 <strong>{{ items.length }}</strong> 篇。</p>
+</section>
+
+<div class="news-layout">
+  <aside class="news-side" aria-label="筛选">
+    <div class="toolbar" role="search">
+      <input id="filter" type="search" placeholder="搜索正史" autocomplete="off" aria-label="按中英文标题或摘要筛选正史文章">
+    </div>
+    <div class="news-side-group">
+      <span class="news-side-heading" id="news-cat-heading">栏目<small>点击取消或恢复</small></span>
+      <nav class="tag-bar" id="news-cats" aria-labelledby="news-cat-heading">
+        {%- for c in loreColumns %}{% set n = items | newsCount(c.key) %}{% if n %}
+        <button type="button" class="chip is-active news-chip-lore{% if c.key == 'eveonline-news' %} news-chip-misc{% else %} news-chip-{{ c.key }}{% endif %}" data-cat="{{ c.key }}" title="{{ c.en }}" aria-pressed="true">{{ c.name }}<small>{{ n }}</small></button>
+        {%- endif %}{% endfor %}
+      </nav>
+    </div>
+    <nav class="news-side-group news-years" aria-labelledby="news-year-heading">
+      <span class="news-side-heading" id="news-year-heading">纪年</span>
+      <span class="news-year-links">
+        {%- for y, group in items | groupby("year") | dictsort | reverse %}
+        <a href="#y{{ y }}" data-year="{{ y }}" title="公历 {{ y }} 年">{{ group[0].yc.slice(0, 5) }}<small>{{ group.length }}</small></a>
+        {%- endfor %}
+      </span>
+    </nav>
+    <p id="filter-status" class="filter-status" aria-live="polite" hidden></p>
+  </aside>
+
+  <div id="news-list" class="news-feed lore-feed" data-unit="篇">
+  {%- set lastYear = "" -%}
+  {%- for n in items %}
+    {%- if n.year != lastYear %}{% set lastYear = n.year %}
+    <h2 class="news-month" data-month="{{ n.month }}" id="y{{ n.year }}"><span class="news-month-n">{{ n.yc.slice(0, 5) }}</span><span class="news-month-y">公历 {{ n.year }}</span></h2>
+    {%- endif %}
+    <a class="news-entry news-entry-feature lore-col-{{ 'cross' if n.cat.key == 'eveonline-news' else 'site' }} lore-col-{{ n.cat.key }}" href="{{ n.url | url }}" data-cat="{{ n.cat.key }}" data-month="{{ n.month }}" data-key="{{ n.key }}">
+      <time class="news-when" datetime="{{ n.date }}">{{ n.date.slice(5) }}</time>
+      <span class="news-entry-box">
+        {%- if n.cover %}
+        <img class="news-entry-cover" src="{{ n.cover | ctfImage(480) }}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">
+        {%- endif %}
+        <span class="news-entry-body">
+          <span class="news-meta lore-entry-meta"><span class="news-cat">{{ n.cat.name }}</span><span>{{ n.yc }}</span></span>
+          <strong class="news-entry-title">{{ n.title }}</strong>
+          <span class="news-entry-en" lang="en">{{ n.titleEn }}</span>
+          {%- if n.excerpt %}<span class="news-entry-excerpt">{{ n.excerpt }}</span>{% endif %}
+        </span>
+      </span>
+    </a>
+  {%- endfor %}
+  </div>
+</div>
+
+<script type="module" src="{{ '/assets/js/news.js' | url }}?v={{ site.build }}"></script>

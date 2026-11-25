@@ -5,7 +5,7 @@ import os
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from pathlib import Path
 from subprocess import CalledProcessError
@@ -46,6 +46,65 @@ class NewsSyncTests(unittest.TestCase):
                 result = sync.translate("# Flight test\n\nThe flight test starts at 12:00 UTC.\n", "offline")
                 self.assertEqual(result, "# 飞行测试\n\n飞行测试于12:00 UTC开始。")
                 self.assertEqual(calls.call_count, 3)
+
+    def host_revision(self, action, second_round="pass"):
+        """真实框架加假模型：第 1 轮退修，宿主修订按 action 处理，第 2 轮按 second_round 结论。"""
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(
+                os.environ, EVE_TRANSLATOR_JOBS=tmp, PYTHONUTF8="1"):
+            seen = []
+
+            def agent(prompt):
+                material = json.loads(prompt.split("只输出 JSON。\n")[-1])
+                if "review_packet" in material.get("materials", material):
+                    seen.append("revise")
+                    finding = material.get("materials", material)["report"]["findings"][0]["id"]
+                    if action == "broken":  # 修订稿丢了时间，两次都过不了检查
+                        return json.dumps({"draft": [{"id": "b002", "zh": "飞行测试于中午开始。"}],
+                                           "responses": [{"finding": finding, "action": "fixed", "note": "已改"}]})
+                    if action == "declined":
+                        return json.dumps({"draft": [], "responses": [
+                            {"finding": finding, "action": "declined", "note": "原译已表达开始时间，无需改"}]})
+                    return json.dumps({"draft": [{"id": "b002", "zh": "飞行测试于12:00 UTC开始。"}],
+                                       "responses": [{"finding": finding, "action": "fixed", "note": "已补"}]})
+                if "report_format" in material.get("materials", material):
+                    packet = material.get("materials", material)
+                    if packet["round"] == 2:
+                        seen.append("review-2")
+                        findings = [] if second_round == "pass" else [
+                            {"id": "R1", "block": "b002", "severity": "critical", "source_quote": "starts at 12:00 UTC",
+                             "problem": "仍嫌生硬", "fix": "改为“于……开始”"}]
+                        return json.dumps(dict(packet["report_format"], verdict=second_round, findings=findings,
+                                               reviewer_context="offline-reviewer-2"))
+                    seen.append("review-1")
+                    if "validation" not in material:
+                        return json.dumps(dict(packet["report_format"], verdict="revise", findings="b002"))
+                    return json.dumps(dict(packet["report_format"], verdict="revise", reviewer_context="offline-reviewer",
+                                           findings=[{"id": "F1", "block": "b002", "severity": "critical",
+                                                      "source_quote": "starts at 12:00 UTC",
+                                                      "problem": "措辞生硬", "fix": "改为“于……开始”"}]))
+                seen.append("write")
+                return json.dumps([{"id": block["id"], "zh": zh} for block, zh in
+                                   zip(material["blocks"], ["飞行测试", "飞行测试在12:00 UTC开始。"], strict=True)])
+
+            with patch.object(sync, "claude", side_effect=agent):
+                result = sync.translate("# Flight test\n\nThe flight test starts at 12:00 UTC.\n", "offline")
+            revisions = ["revise", "revise"] if action == "broken" else ["revise"]
+            self.assertEqual(seen, ["write", "review-1", "review-1", *revisions, "review-2"])
+            return result
+
+    def test_real_framework_host_revision_and_second_review(self):
+        self.assertEqual(self.host_revision("fixed"), "# 飞行测试\n\n飞行测试于12:00 UTC开始。")
+
+    def test_real_framework_declined_finding_goes_to_second_review(self):
+        self.assertEqual(self.host_revision("declined"), "# 飞行测试\n\n飞行测试在12:00 UTC开始。")
+
+    def test_unregistrable_revision_keeps_submitted_draft(self):
+        with redirect_stderr(StringIO()):
+            self.assertEqual(self.host_revision("broken"), "# 飞行测试\n\n飞行测试在12:00 UTC开始。")
+
+    def test_second_round_objection_still_publishes(self):
+        self.assertEqual(self.host_revision("declined", second_round="revise"),
+                         "# 飞行测试\n\n飞行测试在12:00 UTC开始。")
 
     def test_baseline_pending_and_rollover(self):
         state = sync.discover(None, ["old"], "v1", "one")
@@ -208,6 +267,18 @@ class NewsSyncTests(unittest.TestCase):
                         with self.assertRaises(ValueError):
                             sync.translate("source", "test")
                     self.assertEqual(agent.call_count, 2)
+
+    def test_failure_detail(self):
+        with tempfile.TemporaryDirectory() as temp:
+            job = Path(temp) / "jobs" / "sample"
+            job.mkdir(parents=True)
+            (job / "report.json").write_text(json.dumps({"findings": [
+                {"severity": "critical", "block": "b004", "problem": "漏译", "fix": "补译"}]}), "utf-8")
+            with patch.object(sync, "FRAMEWORK", Path(temp)):
+                detail = sync.failure_detail("sample", {"reasons": ["修订处理尚未登记"]}, "  已结束\n")
+        self.assertIn("修订处理尚未登记", detail)
+        self.assertIn("report.json critical b004：漏译 → 补译", detail)
+        self.assertIn("修订输出：已结束", detail)
 
 
 if __name__ == "__main__":
