@@ -10,8 +10,8 @@
     "monthly-economic-report-october-2026"
   ],
   "feed": [
-    "military-campaigns-update",
     "patch-notes-version-24-02",
+    "military-campaigns-update",
     "community-beat-for-20-november",
     "monthly-ban-report-october-2026",
     "25-off-omega-free-black-friday-skins",
@@ -23,7 +23,7 @@
     "patch-notes-version-24-02"
   ],
   "patch": "patch-notes-version-24-02",
-  "observed": "809156a8b60e49a4f99b0c941578125462bb469df185dc0e75bfbd122fdee1d6",
+  "observed": "80892e1b4b7ba546edb5ebe831036f785ffc4a170a3293fc98dae7a427abef8a",
   "sections": {
     "patch-notes-version-24-02": {
       "intro": {
@@ -74,5 +74,5 @@
     }
   },
   "deploy": false,
-  "patchPublishedAt": "2026-11-24T22:16:15.605Z"
+  "patchPublishedAt": "2026-11-25T11:00:17.904Z"
 }
