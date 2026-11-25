@@ -9,6 +9,7 @@ import {
 } from './news.mjs';
 import { loadCalendar, missingCalendar, validateCalendar } from './news-calendar.mjs';
 import { fetchLore, loreDocument, validateLore } from './news-lore.mjs';
+import { publishNews } from './news-publication.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const NEWS_DIR = path.join(ROOT, 'src', 'news');
@@ -18,9 +19,9 @@ const INSTRUCTION_FILES = new Set(['AGENTS.md', 'CLAUDE.md']);
 
 const HELP = `用法：npm run news -- <命令>
 
-  official <英文链接> [--force]
+  official <英文链接> [--source-snapshot <英文快照.md>] [--force]
       官网有中文版时直接抓取写成页面（translation: official）；没有时退出码 3，需走翻译。
-  add <英文链接> --file <中文.md> [--translation site|official] [--force]
+  add <英文链接> --file <中文.md> [--translation site|official] [--source-snapshot <英文快照.md>] [--force]
       用一篇中文 Markdown（首行“# 标题”）写成页面，元数据取自英文原文；默认 translation: site。
   import <目录> --registry <登记.jsonl> [--force]
       批量导入官方中文 Markdown：登记表每行含 local_path 与 url（中文页链接），按文件名匹配。
@@ -28,8 +29,10 @@ const HELP = `用法：npm run news -- <命令>
       抓取正史英文原文，写出待译草稿（首行“# 英文标题”）。
   lore <universe.eveonline.com 链接> --file <中文.md> [--force]
       用译文（首行“# 中文标题”）写成 src/news/lore/<短名>.md，元数据取自原文；translation: site。
-  check
+  check [--slug <短名>]
       校验 src/news/、src/news/lore/ 与折扣清单。
+  record <英文链接> [--source-snapshot <英文快照.md>]
+      已手工编辑的页面同步订阅状态；补丁必须提供该译文所用的完整英文快照。
 
 已存在的页面默认不覆盖，加 --force 才重写（保留手工指定的 category、lore、toc、tocDepth）。`;
 
@@ -55,7 +58,7 @@ function slugOf(url) {
 }
 
 /** 写页面；已存在且未加 --force 时跳过。返回 written / skipped。 */
-function writePage(slug, data, body, force) {
+function writePage(slug, data, body, force, options = {}) {
   const file = pageFile(slug);
   if (existsSync(file)) {
     if (!force) return 'skipped';
@@ -68,8 +71,15 @@ function writePage(slug, data, body, force) {
   const errors = validateNews(data, body, slug);
   if (errors.length) throw new Error(errors.join('\n'));
   mkdirSync(NEWS_DIR, { recursive: true });
-  writeFileSync(file, newsDocument(data, body), 'utf8');
-  return 'written';
+  return publishNews({ root: ROOT, slug, document: newsDocument(data, body), body, ...options });
+}
+
+function publicationOptions(args) {
+  const inferred = args.file && path.join(path.dirname(args.file), 'source.md');
+  return {
+    sourceFile: args['source-snapshot'] ?? (inferred && existsSync(inferred) ? inferred : undefined),
+    fingerprintsFile: args.fingerprints,
+  };
 }
 
 async function englishMeta(slug) {
@@ -86,7 +96,7 @@ async function cmdOfficial(args) {
     return 3;
   }
   const meta = await englishMeta(slug);
-  const status = writePage(slug, { title: zh.title, ...meta, translation: 'official' }, zh.body, args.force);
+  const status = writePage(slug, { title: zh.title, ...meta, translation: 'official' }, zh.body, args.force, publicationOptions(args));
   console.log(JSON.stringify({ slug, status, file: path.relative(ROOT, pageFile(slug)) }));
   return 0;
 }
@@ -98,7 +108,7 @@ async function cmdAdd(args) {
   const { title, body } = splitTitle(readFileSync(args.file, 'utf8'));
   if (!title) throw new Error(`${args.file}：首行必须是“# 中文标题”`);
   const meta = await englishMeta(slug);
-  const status = writePage(slug, { title, ...meta, translation }, body, args.force);
+  const status = writePage(slug, { title, ...meta, translation }, body, args.force, publicationOptions(args));
   console.log(JSON.stringify({ slug, status, file: path.relative(ROOT, pageFile(slug)) }));
   return 0;
 }
@@ -110,7 +120,7 @@ async function cmdImport(args) {
   for (const line of readFileSync(args.registry, 'utf8').split('\n')) {
     if (!line.trim()) continue;
     const row = JSON.parse(line);
-    if (row.local_path && row.url) urls.set(path.basename(row.local_path), row.url);
+    if (row.local_path && row.url) urls.set(path.basename(row.local_path), row);
   }
   const files = readdirSync(dir).filter(f => f.endsWith('.md'));
   const result = { written: 0, skipped: 0, failed: [] };
@@ -119,9 +129,9 @@ async function cmdImport(args) {
     while (next < files.length) {
       const name = files[next++];
       try {
-        const url = urls.get(name);
-        if (!url) throw new Error('登记表中没有链接');
-        const slug = slugOf(url);
+        const row = urls.get(name);
+        if (!row) throw new Error('登记表中没有链接');
+        const slug = slugOf(row.url);
         if (existsSync(pageFile(slug)) && !args.force) {
           result.skipped++;
           continue;
@@ -129,7 +139,8 @@ async function cmdImport(args) {
         const { title, body } = splitTitle(readFileSync(path.join(dir, name), 'utf8'));
         if (!title) throw new Error('首行不是“# 标题”');
         const meta = await englishMeta(slug);
-        result[writePage(slug, { title, ...meta, translation: 'official' }, body, args.force)]++;
+        result[writePage(slug, { title, ...meta, translation: 'official' }, body, args.force,
+          { sourceFile: row.source_snapshot })]++;
       } catch (error) {
         result.failed.push(`${name}：${error.message}`);
       }
@@ -138,6 +149,17 @@ async function cmdImport(args) {
   await Promise.all(Array.from({ length: 4 }, worker));
   console.log(JSON.stringify(result, null, 2));
   return result.failed.length ? 1 : 0;
+}
+
+function cmdRecord(args) {
+  const slug = slugOf(args._[1] ?? '');
+  const document = readFileSync(pageFile(slug), 'utf8');
+  const { data, content } = matter(document);
+  const errors = validateNews(data, content, slug);
+  if (errors.length) throw new Error(errors.join('\n'));
+  publishNews({ root: ROOT, slug, document, body: content, requestDeploy: true, ...publicationOptions(args) });
+  console.log(JSON.stringify({ slug, status: 'recorded' }));
+  return 0;
 }
 
 async function cmdLore(args) {
@@ -167,7 +189,15 @@ async function cmdLore(args) {
 
 const markdownPages = dir => (existsSync(dir) ? readdirSync(dir).filter(f => f.endsWith('.md') && !INSTRUCTION_FILES.has(f)) : []);
 
-function cmdCheck() {
+function cmdCheck(args) {
+  if (args.slug) {
+    if (!/^[A-Za-z0-9][A-Za-z0-9-]*$/.test(args.slug)) throw new Error('新闻短名无效');
+    const { data, content } = matter(readFileSync(pageFile(args.slug), 'utf8'));
+    const errors = validateNews(data, content, args.slug);
+    if (errors.length) throw new Error(errors.join('\n'));
+    console.log(`${args.slug} 校验通过`);
+    return 0;
+  }
   const errors = [];
   const newsPages = [];
   const pages = (dir, validate, seen) => {
@@ -206,7 +236,7 @@ function cmdCheck() {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const commands = { official: cmdOfficial, add: cmdAdd, import: cmdImport, lore: cmdLore, check: cmdCheck };
+  const commands = { official: cmdOfficial, add: cmdAdd, import: cmdImport, lore: cmdLore, check: cmdCheck, record: cmdRecord };
   const run = commands[args._[0]];
   if (!run) {
     console.log(HELP);

@@ -19,50 +19,53 @@
     "up-to-25-off-omega-expansion-deals",
     "the-fractured-skies-expansion-is-here"
   ],
-  "pending": [
-    "patch-notes-version-24-02"
-  ],
+  "pending": [],
   "patch": "patch-notes-version-24-02",
   "observed": "80892e1b4b7ba546edb5ebe831036f785ffc4a170a3293fc98dae7a427abef8a",
   "sections": {
     "patch-notes-version-24-02": {
       "intro": {
-        "source": "817bcc562a500b5879dd556f5e5daff936f1175dcbfc034c7f8eb3215b0a2df1",
+        "source": "dc8249caab3512cc9d761e4b0ef554f760474899584625e542a48f4deacd8871",
+        "zh": null,
+        "official": false
+      },
+      "2026-11-25.1": {
+        "source": "102d215ece3836f4179c8bc45918ff3159cb8bd057fe0205d34dec3d7ace6936",
         "zh": null,
         "official": false
       },
       "2026-11-24.1": {
-        "source": "a9bda1398a5eba2f27a3bc38b13899969f07cda7ecc44ff9a2e1fa5a5e656428",
+        "source": "1fdcd5dc8ac05f0a77cc4934612d7c1d2428171a93f00c9a7a2622f0294f4371",
         "zh": null,
         "official": false
       },
       "2026-11-20.1": {
-        "source": "b07cf476fdc3edaa98ac3824964334b3790abc05c7063054cc6c5603950ab024",
+        "source": "c53ff1da7b98b93cdff418ab21d960089b0d028106c1c31c3d9660a52227607b",
         "zh": null,
         "official": false
       },
       "2026-11-18.1": {
-        "source": "b3e399ab75a0da26c5f19c0532f37a61a9ece3f54674cc114fab78bef6f9deab",
+        "source": "fcac499deb7e526edea8cd4f5faae803a6812581a3bf6f20690d6495cefb9a0d",
         "zh": null,
         "official": false
       },
       "2026-11-17.1": {
-        "source": "72fa8c62d2d66af96a7200684f04ceaa308a56e170f1149d5026cce6054c30f6",
+        "source": "0cbde60001e8eab60a1fb1807e9306acd528bdf7dd4c97e9647f5c7523fc1149",
         "zh": null,
         "official": false
       },
       "2026-11-13.1": {
-        "source": "8c7c0dd1625cbd0435978b6b08ea15ed181d1d4b91b527e167b8bd5cd9cd0716",
+        "source": "8ec13e5f65d4c44c9433c4d447a2cdbb5668bfb588fedf1bc123465e83cc9dbf",
         "zh": null,
         "official": false
       },
       "2026-11-12.1": {
-        "source": "467c083f3cb2b6e377fe529c9bfec87183c297e126ebb3e139f14f05c1ba3eb1",
+        "source": "90e160cd2bd2be71e4ac2ec9590209f46e8a8904a657c0e9c76e1664ffdb8175",
         "zh": null,
         "official": false
       },
       "2026-11-11.1": {
-        "source": "fa53577a103ac720e59cf2961f97d992cef6499cbd0947fadb88d42fa8925d1a",
+        "source": "b775b4afd5a4f94e6fcf58f64f1d64ef42ea41c588fedd5f2810f4488927c6c6",
         "zh": null,
         "official": false
       },

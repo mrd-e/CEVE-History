@@ -17,6 +17,10 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 180
+    env:
+      PYTHONUNBUFFERED: '1'
+      PYTHONUTF8: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
     permissions:
       contents: write
       actions: write
@@ -43,11 +47,22 @@ jobs:
           python - <<'PY' >> "$GITHUB_OUTPUT"
           import json
           from pathlib import Path
+          from datetime import datetime, timezone
 
           state = json.loads(Path(".github/news-state.json").read_text(encoding="utf-8"))
-          print(f"pending={len(state['pending'])}")
+          retry = state.get('modelRetryAfter')
+          cooling = retry and datetime.fromisoformat(retry.replace('Z', '+00:00')) > datetime.now(timezone.utc)
+          print(f"pending={0 if cooling else len(state['pending'])}")
           print(f"deploy_pending={str(state['deploy']).lower()}")
           PY
+      - name: 离线验证收录与恢复协议
+        if: inputs.test_translation == true || (steps.scan.outcome == 'success' && steps.scan.outputs.pending != '0')
+        run: python -m unittest discover -s scripts/ci-news -p 'test_*.py'
+      - name: 恢复已完成的翻译阶段
+        if: steps.scan.outcome == 'success' && steps.scan.outputs.pending != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/ci-news/sync.py restore
       - uses: actions/setup-node@v5
         if: steps.scan.outcome == 'success' && steps.scan.outputs.pending != '0'
         with:
@@ -65,8 +80,8 @@ jobs:
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
         run: python scripts/ci-news/sync.py smoke
-      - name: 保留失败的翻译任务
-        if: failure()
+      - name: 保存翻译成果、复核意见与调用诊断
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: translator-jobs-${{ github.run_id }}-${{ github.run_attempt }}

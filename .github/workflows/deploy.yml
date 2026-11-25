@@ -19,6 +19,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  news-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      PYTHONUTF8: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
+        with:
+          repository: mrd-e/EVE-Online-Translation-Framework
+          token: ${{ secrets.TRANSLATOR_READ_TOKEN }}
+          persist-credentials: false
+          path: translator
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s scripts/ci-news -p 'test_*.py'
+
   build:
     runs-on: ubuntu-latest
     steps:
@@ -46,7 +66,7 @@ jobs:
 
   deploy:
     if: github.event_name != 'pull_request'
-    needs: build
+    needs: [build, news-tests]
     runs-on: ubuntu-latest
     environment:
       name: github-pages

@@ -6,7 +6,7 @@ Cloudflare Worker 每 10 分钟读取官网 RSS，与 main 上的订阅记录对
 
 1. 将天书收录工具、页面模板和本工作流一并合入站点仓库 `mrd-e/CEVE-History` 的默认分支 `main`。启用仓库的 GitHub Actions 和现有 Pages 部署流程。
 2. 在自己的终端运行 `claude setup-token`，使用 Claude 订阅账号完成浏览器授权。在站点仓库的 **Settings → Secrets and variables → Actions → Secrets → New repository secret** 中建立 `CLAUDE_CODE_OAUTH_TOKEN`，值为终端返回的令牌。一年到期时重新生成并替换。工作流使用 Claude Code 自带的订阅认证。
-3. 用能访问翻译框架仓库的 GitHub 账号创建 fine-grained personal access token。仓库范围只选 `mrd-e/EVE-Online-Translation-Framework`，在 Repository permissions 中给 **Contents → Read-only**。在同一处建立 `TRANSLATOR_READ_TOKEN`，值为该令牌。工作流从该仓库读取固定版本的框架、词表和复核技能。
+3. 用能访问翻译框架仓库的 GitHub 账号创建 fine-grained personal access token。仓库范围只选 `mrd-e/EVE-Online-Translation-Framework`，在 Repository permissions 中给 **Contents → Read-only**。在同一处建立 `TRANSLATOR_READ_TOKEN`，值为该令牌。工作流读取该仓库最新默认分支的框架、词表和复核技能，不设置 checkout `ref`；约束和理由见 [ADR 0001](decisions/0001-translator-latest.md)。实际版本和兼容指纹写入运行日志，不用于固定下一次版本。
 4. 站点工作流需要向 main 写入文章及待办，并调度部署。工作流已声明 `contents: write` 和 `actions: write`；仓库或组织策略须允许这两项权限。如果 main 强制经过 PR，当前直接推送方式会被分支规则拦下。
 5. 在 Cloudflare 的 `ceve-history` Worker 中部署仓库里的 `.github/news-worker.mjs`，将原 Cron Trigger 改为 `*/10 * * * *`（UTC）。Worker 的 `GITHUB_TOKEN` Secret 使用仅对站点仓库有 Actions 读写权限的 GitHub 凭据。Worker 从公开仓库读取上次扫描结果，无需 KV。切换前先将工作流和扫描脚本合入 main。首次整点检查会补记当前补丁的版本时间。
 6. 打开 **Actions → 天书自动收录 → Run workflow**，选择 main 并勾选“仅用一段样文测试订阅、翻译与独立复核”。成功时日志中出现样文译文。这一步会使用少量订阅额度。随后取消勾选再运行一次，建立订阅起点。也可以等到下一次定时运行建立起点。
@@ -16,4 +16,21 @@ Cloudflare Worker 每 10 分钟读取官网 RSS，与 main 上的订阅记录对
 - 有可用的官方简中正文时，Claude 通读并只校正明显错误。英文稿按 translator 技能分块写稿，新的 Claude 会话独立复核。框架返回“已复核”或“复核后修订”且各项检查齐全才可发布。
 - Worker 每小时检查补丁版本，发现更新后由工作流核对正文，即使 RSS 条目已滚出列表也能发现变化。同一补丁合辑首次需要创建页面时处理全篇。之后按日期和当日序号复用已发布的译文；新增、改写的小节及变动的前言单独处理。手工收录的旧合辑接入自动更新时，用发布该页时的英文快照登记前言和各节的原文指纹。如果已有章节缺少指纹，工作流会在送译前列出缺项，保留待办，补齐后重试。
 - 来源无变化、待办为空且没有待重试的部署时，检查结束后直接退出。只有站内新闻页面新增或更新后才启动“构建与发布”，实际上线结果见该工作流。单篇失败留在待办，其他成功的文章可先发布。部署请求失败时，下次继续尝试。
-- 配额不足时查看收录运行中失败的篇目；令牌失效时替换同名 Secret，再手动运行收录。GitHub 繁忙时工作流可能排队。持续停机期间已滑出 RSS 的普通新闻需要另行补录。
+- 配额不足时保存 `modelRetryAfter`，优先采用服务返回的 UTC 恢复时间；无法识别时等待一小时。本轮立即停止后续模型调用，Worker 和宿主在恢复前不再送译；已完成文章仍可部署。令牌失效等调用故障同样停止本轮，不当作 JSON 格式错误重试；替换同名 Secret 后再运行。GitHub 繁忙时工作流可能排队。持续停机期间已滑出 RSS 的普通新闻需要另行补录。
+
+## 成果恢复与诊断
+
+- 待办进入翻译前恢复最近完成运行的 `translator-jobs-*` 附件。新附件包含累积任务；旧附件按整个任务的完成阶段择优合并，避免混用不同稿件的状态、草稿和报告。原文及工具、技能、数据包兼容时按 `drafting / in_review / revising / revised / passed / closed` 阶段继续。工具或数据包变化时，已完成的小节先用最新检查器与数据重新核验，通过后装配并保留原复核结论；原任务的原文、名称快照和报告保持不变，新核验另存。无法验证兼容性时保留旧任务并记录新建原因，不能为恢复而回退框架。
+- 成功、失败、取消后都执行附件保存，保留 14 天。GitHub 强制终止运行器或附件已经过期时，不能保证恢复最后成果；没有可用附件才重新建立任务。正常取消后只能恢复已经写入磁盘的阶段。
+- 日志即时输出任务、当前阶段、耗时及 Claude CLI 返回的用量。`jobs/calls/` 保存完整返回与错误输出、提示词指纹；不保存凭据。格式或登记校验失败只修正一次，服务故障不进入这条重试路径。
+- 简单文本的 JSON 协议允许 `{draft, decisions}`，每条决定含 `source / zh / basis`，宿主执行 `decide` 后保存和检查，普通词与 SDE 同名实体可按语境消歧。修订协议同样接受 `decisions`。
+- 第二轮仍有意见时沿用框架既定交付规则，不启动第三轮。`publication-report.json`、原复核报告和运行日志保存保留意见及争议块，成功附件也保留这些资料。
+- 官方校订使用原文与官译指纹缓存；不合法 JSON 或新增数值、日期漂移可修正一次，第二次仍失败就保留待办。不会把未验证的修改当成成功校订。
+
+## 人工与自动收录的状态
+
+- `news official / add / import` 写入页面时共用 `scripts/ci-news/publication.py` 计算订阅状态，并同步 `.github/news-state.json`：移除本篇待办、登记已收录短名、保存补丁章节指纹，页面变化时标记待部署。不自动提交或推送。
+- 合辑补丁必须提供实际翻译依据的完整英文快照：`npm run news -- add <链接> --file <译文.md> --source-snapshot <英文快照.md>`。译文任务目录旁有 `source.md` 时自动使用；自动收录传入本轮快照及逐节官译指纹。日期覆盖不一致或指纹不符时拒绝写入，不用最新官网内容冒充旧译文依据。
+- 已直接编辑页面时，完成正文校验后运行 `npm run news -- record <链接> --source-snapshot <英文快照.md>`；普通新闻不需要补丁快照。批量导入补丁时，登记行额外提供 `source_snapshot` 路径。
+- 页面校验或状态计算失败不写入；状态落盘失败还原本次页面。自动收录的后续单篇校验失败时还原页面与状态，并保留翻译任务供下次继续；翻译期间发现本篇被并行修改时停止覆盖。推送失败不抹去任务，下一次可复用成稿补推。
+- CI 在收录和站点发布流程都执行真实框架配假模型的 Python 离线回归；不按 PR 来源省略。Node 回归覆盖页面与状态一起落盘、Worker 冷却、附件配置及 ADR 0001。离线回归不消费订阅额度。

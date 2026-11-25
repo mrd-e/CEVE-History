@@ -18,7 +18,8 @@ class NewsSyncTests(unittest.TestCase):
     def test_claude_failure_reports_both_streams_without_token(self):
         script = ("import os, sys; print('subscription error', os.environ['CLAUDE_CODE_OAUTH_TOKEN']);"
                   "print('container diagnostic', file=sys.stderr); sys.exit(1)")
-        with patch.dict(os.environ, CLAUDE_CODE_OAUTH_TOKEN="secret-for-test"):
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(
+                os.environ, CLAUDE_CODE_OAUTH_TOKEN="secret-for-test", EVE_TRANSLATOR_JOBS=tmp):
             with self.assertRaises(ValueError) as error:
                 sync.claude_output([sys.executable, "-c", script], "")
         self.assertIn("subscription error", str(error.exception))
@@ -144,6 +145,10 @@ class NewsSyncTests(unittest.TestCase):
                 def run(args, **kwargs):
                     if args[2] == "add":
                         page.write_text(after, "utf-8")
+                        recorded = sync.read_state()
+                        recorded["pending"] = []
+                        recorded["sections"][slug] = {}
+                        sync.write_state(recorded)
 
                 with (patch.object(sync, "NEWS", root), patch.object(sync, "FRAMEWORK", root),
                       patch.object(sync, "STATE", root / "state.json"),
@@ -250,23 +255,29 @@ class NewsSyncTests(unittest.TestCase):
         self.assertNotIn("\n## 缺陷修复：", rendered)
 
     def test_review_gate(self):
+        # 本项只验证 render 的交付门槛；兼容核验由恢复测试中的真实任务覆盖。
+        from eve_translator.jobs import prepare
         with tempfile.TemporaryDirectory() as temp:
             draft = Path(temp) / "translation.md"
             draft.write_text("# 飞行\n\n译文", "utf-8")
+            job, _ = prepare(Path(temp), markdown="# Flight\n\nText", origin={"label": "gate"})
+            job.save_state(dict(job.state, phase="passed"))
             for labels in (["已复核"], ["复核后修订"], ["待复核"], ["已复核", "部分译文"]):
                 def command(name, *args, **kwargs):
-                    return {"prepare": {"job": "sample"}, "check": {}, "review": {},
+                    return {"prepare": {"job": job.id}, "check": {}, "review": {},
                             "status": {"phase": "passed"}, "render": {
                                 "file": str(draft), "delivery": {"labels": labels, "skipped_checks": []}
                             }}[name]
-                with self.subTest(labels=labels), patch.object(sync, "framework", command), \
+                with self.subTest(labels=labels), patch.dict(os.environ, EVE_TRANSLATOR_JOBS=temp), \
+                        patch.object(sync, "framework", command), \
+                        patch.object(sync, "revalidate_completed", return_value=True), \
                         patch.object(sync, "claude") as agent:
                     if labels in (["已复核"], ["复核后修订"]):
                         self.assertIn("译文", sync.translate("source", "test"))
                     else:
                         with self.assertRaises(ValueError):
                             sync.translate("source", "test")
-                    self.assertEqual(agent.call_count, 2)
+                    self.assertEqual(agent.call_count, 0)
 
     def test_failure_detail(self):
         with tempfile.TemporaryDirectory() as temp:

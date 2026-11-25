@@ -34,6 +34,8 @@ export default {
     const stateResponse = await fetch(`https://raw.githubusercontent.com/${repository}/main/.github/news-state.json`);
     if (!stateResponse.ok && stateResponse.status !== 404) throw new Error(`读取订阅状态失败 HTTP ${stateResponse.status}`);
     const state = stateResponse.ok ? await stateResponse.json() : null;
+    // 额度恢复前不调度翻译；已完成文章仍可请求部署。
+    if (state?.modelRetryAfter && Date.parse(state.modelRetryAfter) > event.scheduledTime && !state.deploy) return;
     const rss = await (await checked(`${site}/rss`)).text();
     const items = [...rss.matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/gi)];
     if (!items.length) throw new Error('RSS 缺少新闻条目');
