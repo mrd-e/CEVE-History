@@ -2,7 +2,7 @@
 title: 补丁说明——24.02版本
 titleEn: Patch Notes - Version 24.02
 source: 'https://www.eveonline.com/news/view/patch-notes-version-24-02'
-published: '2026-11-25'
+published: '2026-11-26'
 officialTags:
   - patch-notes
 cover: >-
@@ -10,16 +10,26 @@ cover: >-
 translation: site
 ---
 
-您好，
+大家好：
 
-以下页面列出了本次发布（版本 24.02，又称《破碎苍穹》）中所有更新的补丁说明。欢迎您前往 EVE Online 论坛，参与关于本次发布内容的玩家讨论：
+本页列出本次发布（24.02版本，即《破碎苍穹》）全部更新的补丁说明。欢迎大家到EVE Online论坛参与本次发布内容的玩家讨论：
 
 - [**综合反馈**](https://forums.eveonline.com/t/version-24-02-fractured-skies-general-feedback/521857)
 - [**已知问题**](https://forums.eveonline.com/t/version-24-02-fractured-skies-known-issues/521801)
 
-**首次发布日期**：2026年11月10日 **最后更新**：2026年11月25日
+**首次发布日期**：2026年11月10日 **最后更新**：2026年11月26日
 
-🤝 - 表示该改动受到玩家反馈或建议的启发。
+🤝 - 表示该项改动源自玩家的反馈或建议。
+
+## **2026-11-26.1补丁说明**
+
+### 功能与改动：
+
+### 涂装：
+
+- Mabebu涂装系列现已扩展至以下舰船：魔符级、激进级、獾级、天鹤级、伊特龙级MKV、涅鲁斯级、徘徊者级、环绕级和雪崩级。
+
+---
 
 ## **2026-11-25.1补丁说明**
 
