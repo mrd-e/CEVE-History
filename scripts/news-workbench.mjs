@@ -1,13 +1,17 @@
 #!/usr/bin/env node
 // 天书工作台：把官方新闻（官方中文版或本站译文）写成 src/news/<短名>.md，正史文章写成 src/news/lore/<短名>.md，并校验天书、正史与折扣清单。
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import matter from 'gray-matter';
 import {
-  articleMeta, fetchArticle, newsCategory, newsDocument, officialChinese, parseNewsUrl, splitTitle, validateNews,
+  articleMeta, fetchArticle, newsCategory, newsDocument, officialChinese, parseNewsUrl, richTextMarkdown, splitTitle,
+  validateNews,
 } from './news.mjs';
-import { loadCalendar, missingCalendar, validateCalendar } from './news-calendar.mjs';
+import {
+  CALENDAR_CHANNELS, CALENDAR_DEALS, dealReview, dealRules, loadCalendar, mergeDeals, missingCalendar, nearbyDeals,
+  validateCalendar,
+} from './news-calendar.mjs';
 import { fetchLore, loreDocument, validateLore } from './news-lore.mjs';
 import { publishNews } from './news-publication.mjs';
 
@@ -33,6 +37,10 @@ const HELP = `用法：npm run news -- <命令>
       校验 src/news/、src/news/lore/ 与折扣清单。
   record <英文链接> [--source-snapshot <英文快照.md>]
       已手工编辑的页面同步订阅状态；补丁必须提供该译文所用的完整英文快照。
+  deals <英文链接> [--source <英文.md>]
+      已收录页面要不要增补折扣清单：输出判断材料 JSON（review 为 true 时含规则、同期条目与中英文正文）。
+  deals <英文链接> --file <判断.json>
+      把判断结果 { entries, link } 校验后并入 src/news/calendar.json；促销公告判断为空时记入 skip，以后不再判断。
 
 已存在的页面默认不覆盖，加 --force 才重写（保留手工指定的 category、lore、toc、tocDepth）。`;
 
@@ -234,9 +242,64 @@ function cmdCheck(args) {
   return 0;
 }
 
+const DEALS_TASK = '判断本篇天书是否带来折扣清单的新条目，收与不收、字段写法都按 rules（折扣板块规则）。'
+  + '交付 JSON 对象 {"entries": [...], "link": [...]}。entries 为本篇新增条目，字段按规则填写，deal 取 dealTypes 的键，'
+  + 'channel 取 channels 的键，不写 news（宿主填本篇短名），key 的日期与 start 相同；一次折扣中商品或支付方式不同的分条记。'
+  + 'nearby 里已有的同一次折扣不新建，改在 link 写 {"key": 已有条目键, "primary": 布尔, "set": {...}}：'
+  + 'primary 为真表示本篇是该折扣的正式公告（原条目挂的是预告等），set 只补原条目缺失或本篇更正的 nameEn、off、end、channel、discount、bonus。'
+  + '时间换算成 UTC；name、discount、bonus 写中文并沿用 article.zh 的译名，channel 与现金／PLEX 购买以 article.en 的计价货币和商城链接为准。'
+  + '本篇没有可收的折扣或赠送时交付 {"entries": [], "link": []}';
+
+const newsSlugs = () => new Set(markdownPages(NEWS_DIR).map(name => name.replace(/\.md$/, '')));
+
+async function englishBody(slug, source) {
+  if (source) return readFileSync(source, 'utf8').trim();
+  const en = await fetchArticle(slug, 'en');
+  if (!en) throw new Error(`${slug}：英文原文不存在或页面中没有文章对象`);
+  return en.richText?.json ? richTextMarkdown(en.richText).trim() : '';
+}
+
+async function cmdDeals(args) {
+  const slug = slugOf(args._[1] ?? '');
+  const calendar = loadCalendar(CALENDAR_FILE);
+  const { data, content } = matter(readFileSync(pageFile(slug), 'utf8'));
+  const category = newsCategory(data)?.key;
+  if (args.file) {
+    const answer = JSON.parse(readFileSync(args.file, 'utf8'));
+    const merged = mergeDeals(calendar, slug, answer, newsSlugs(), { offer: category === 'offer' });
+    if (merged.changed) {
+      const tmp = `${CALENDAR_FILE}.${process.pid}.tmp`;
+      writeFileSync(tmp, `${JSON.stringify(merged.calendar, null, 2)}\n`, 'utf8');
+      renameSync(tmp, CALENDAR_FILE);
+    }
+    const { added, linked, skipped } = merged;
+    console.log(JSON.stringify({ slug, status: merged.changed ? 'written' : 'unchanged', added, linked, skipped }));
+    return 0;
+  }
+  const published = data.published instanceof Date ? data.published.toISOString().slice(0, 10) : String(data.published ?? '');
+  const packet = {
+    slug, title: data.title, titleEn: data.titleEn, published, category,
+    ...dealReview({ slug, cat: category, published, text: `${data.title}\n${data.titleEn}\n${content}` }, calendar),
+  };
+  if (packet.review) {
+    Object.assign(packet, {
+      task: DEALS_TASK,
+      rules: dealRules(readFileSync(path.join(NEWS_DIR, 'AGENTS.md'), 'utf8')),
+      dealTypes: Object.fromEntries(Object.entries(CALENDAR_DEALS).map(([k, d]) => [k, d.name])),
+      channels: CALENDAR_CHANNELS,
+      nearby: nearbyDeals(calendar, published),
+      article: { zh: content.trim(), en: await englishBody(slug, args.source) },
+    });
+  }
+  console.log(JSON.stringify(packet, null, 2));
+  return 0;
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const commands = { official: cmdOfficial, add: cmdAdd, import: cmdImport, lore: cmdLore, check: cmdCheck, record: cmdRecord };
+  const commands = {
+    official: cmdOfficial, add: cmdAdd, import: cmdImport, lore: cmdLore, check: cmdCheck, record: cmdRecord, deals: cmdDeals,
+  };
   const run = commands[args._[0]];
   if (!run) {
     console.log(HELP);

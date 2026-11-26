@@ -443,6 +443,52 @@ def patch_translation(slug, source, previous, page, official=None, translator=tr
     return "\n\n".join(result), origin, fingerprints
 
 
+def workbench(*args):
+    out = subprocess.run(["node", "scripts/news-workbench.mjs", *args], cwd=ROOT, capture_output=True,
+                         encoding="utf-8")
+    if out.returncode:
+        details = out.stderr.strip() or out.stdout.strip()
+        raise ValueError(f"news {args[0]} 退出码 {out.returncode}：{details[:2000]}")
+    return json.loads(out.stdout)
+
+
+def register_deals(slug):
+    """收录后判断折扣清单要不要增补，返回清单是否改动；判断结果按材料存档，重试不再调用模型。"""
+    url = ccp.page_url(slug)
+    packet = workbench("deals", url)
+    print(f"{slug} 折扣：{packet['reason']}", flush=True)
+    if not packet["review"]:
+        return False
+    task = packet.pop("task")
+    root = runtime.jobs_root(FRAMEWORK) / "deals"
+    checkpoint = root / f"{digest(task + chr(0) + json.dumps(packet, ensure_ascii=False, sort_keys=True))}.json"
+
+    def apply(answer):
+        answer_file = root / f"{slug}-answer.json"
+        runtime.atomic_json(answer_file, answer)
+        result = workbench("deals", url, "--file", str(answer_file))
+        runtime.atomic_json(checkpoint, answer)
+        print(f"{slug} 折扣：新增 {len(result['added'])} 项，关联 {len(result['linked'])} 项", flush=True)
+        return result["status"] == "written"
+
+    if checkpoint.exists():
+        try:
+            return apply(json.loads(checkpoint.read_text("utf-8")))
+        except ValueError as error:
+            print(f"{slug} 折扣存档不再适用，重新判断：{error}", flush=True)
+    return host_step(None, task, packet, apply)
+
+
+def restore(path, before, written):
+    """文件仍是本轮写入的内容时恢复原样；已被其他操作改过的保留。"""
+    if written is None or not path.exists() or path.read_bytes() != written:
+        return
+    if before is None:
+        path.unlink()
+    else:
+        path.write_bytes(before)
+
+
 def git_save(paths, message):
     paths = [str(path) for path in paths]
     run(["git", "add", "--", *paths], cwd=ROOT)
@@ -508,10 +554,19 @@ def publish():
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]*", slug):
             raise ValueError("待办短名无效")
         page = NEWS / f"{slug}.md"
+        calendar = NEWS / "calendar.json"
         paths = [STATE]
         if PATCH.fullmatch(slug) or not page.exists():
             previous_page = page.read_bytes() if page.exists() else None
-            written_page = written_state = None
+            written_page = written_state = previous_state = previous_calendar = None
+            deals = False
+
+            def roll_back():
+                restore(page, previous_page, written_page)
+                restore(STATE, previous_state, written_state)
+                if previous_calendar is not None:
+                    calendar.write_bytes(previous_calendar)
+
             try:
                 text, origin, hashes = prepare_page(slug, state, page)
                 draft = runtime.jobs_root(FRAMEWORK) / "publication.md"
@@ -534,8 +589,13 @@ def publish():
                 if slug in recorded["pending"] or (PATCH.fullmatch(slug) and recorded["sections"].get(slug) != hashes):
                     raise ValueError("页面写入未同步订阅状态，保留待办")
                 run(["node", "scripts/news-workbench.mjs", "check", "--slug", slug], cwd=ROOT)
+                # 折扣清单与页面同一提交；这一步失败时整篇回滚，留在待办下次重试。
+                if not PATCH.fullmatch(slug):
+                    previous_calendar = calendar.read_bytes()
+                    deals = register_deals(slug)
             except ClaudeUnavailable as error:
                 print(f"{slug} 模型不可用，停止本轮后续调用：{error}", file=sys.stderr, flush=True)
+                roll_back()
                 retry = runtime.cooling(runtime.jobs_root(FRAMEWORK))
                 if retry:
                     state = read_state()
@@ -545,19 +605,16 @@ def publish():
                 failed.extend(s for s in state["pending"] if s not in failed)
                 break
             except (ValueError, OSError, subprocess.CalledProcessError) as error:
-                if written_page is not None and page.read_bytes() == written_page:
-                    if previous_page is None:
-                        page.unlink(missing_ok=True)
-                    else:
-                        page.write_bytes(previous_page)
-                if written_state is not None and STATE.read_bytes() == written_state:
-                    STATE.write_bytes(previous_state)
+                roll_back()
                 print(f"{slug} 留待重试：{error}", file=sys.stderr)
                 failed.append(slug)
                 continue
             state = read_state()
             if page.read_bytes() != previous_page:
                 paths.append(page)
+                state["deploy"] = True
+            if deals:
+                paths.append(calendar)
                 state["deploy"] = True
         else:
             state = record(read_state(), slug, body="", changed=False)

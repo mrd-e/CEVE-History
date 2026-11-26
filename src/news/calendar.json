@@ -1467,6 +1467,15 @@
       "discount": "1 个月 400 PLEX（八折），3 个月 1,050 PLEX（每月 350 PLEX）"
     },
     {
+      "key": "2024-06-21-federation-day-pack",
+      "name": "盖伦特联邦日礼包",
+      "deal": "pack",
+      "start": "2024-06-21",
+      "channel": "both",
+      "discount": "自由之影包（20 天欧米伽、50 PLEX）与派瑞根自由包（600 PLEX、能手型大脑加速器）限时上架，每账号限购一次，游戏商城同款不含 PLEX；往年联邦日涂装七折",
+      "news": "new-hues-for-liberty"
+    },
+    {
       "key": "2024-06-27-omega-mct-50",
       "name": "欧米伽 + 多人物训练五折",
       "deal": "mct-plex",
@@ -1485,6 +1494,15 @@
       "end": "2024-07-11",
       "discount": "方舟联合体舰队礼包下架前最后发售",
       "news": "complete-your-arkombine-arisen-skin-collection"
+    },
+    {
+      "key": "2024-07-11-liberation-day-pack",
+      "name": "独立日礼包",
+      "deal": "pack",
+      "start": "2024-07-11",
+      "channel": "both",
+      "discount": "自由之影包（20 天欧米伽、50 PLEX）与派瑞根自由包（600 PLEX、能手型大脑加速器）限时上架，每账号限购一次，游戏商城同款不含 PLEX；往年独立日涂装七折",
+      "news": "the-colors-of-freedom"
     },
     {
       "key": "2024-07-17-nes-extractor-20",
@@ -2214,6 +2232,15 @@
       "end": "2025-06-24",
       "channel": "game",
       "discount": "毕业生、奇才、大师三款技能学习礼包买一送一"
+    },
+    {
+      "key": "2025-06-20-federation-day-pack",
+      "name": "盖伦特联邦日礼包",
+      "deal": "pack",
+      "start": "2025-06-20",
+      "channel": "web",
+      "discount": "自由之影包（20 天欧米伽、50 PLEX）与派瑞根自由包（600 PLEX、能手型大脑加速器）重新上架，每账号限购一次；往年联邦日涂装七折",
+      "news": "returning-hues-for-liberty"
     },
     {
       "key": "2025-07-11-liberation-day-pack",
@@ -3255,5 +3282,10 @@
       "bonus": "附赠铜闪系列涂装（1 至 7 款，含盖亚级首款涂装）",
       "news": "25-off-omega-free-black-friday-skins"
     }
+  ],
+  "skip": [
+    "eve-monument-deadline-extended",
+    "last-chance-to-get-on-the-monument",
+    "paragon-offers-25-sequencing-discount"
   ]
 }

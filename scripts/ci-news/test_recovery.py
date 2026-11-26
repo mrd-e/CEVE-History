@@ -269,6 +269,75 @@ class RecoveryTests(unittest.TestCase):
                 self.assertEqual(sync.read_state()["pending"], ["one", "two"])
                 self.assertIn("modelRetryAfter", sync.read_state())
 
+    def test_deals_join_the_page_commit_or_roll_back_the_whole_article(self):
+        slug = "winter-sale"
+        original_calendar = b'{"entries": []}\n'
+        def write_deals(name):
+            (Path(tmp) / "calendar.json").write_text('{"entries": ["new"]}\n', "utf-8")
+            return True
+        def failing_deals(name):
+            write_deals(name)
+            raise ValueError("清单校验不通过")
+        cases = (("written", write_deals), ("failed", failing_deals),
+                 ("quota", sync.ClaudeUnavailable("quota")))
+        for label, deals in cases:
+            with self.subTest(label), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                page, calendar, state_file = root / f"{slug}.md", root / "calendar.json", root / "state.json"
+                calendar.write_bytes(original_calendar)
+                def command(args, **kwargs):
+                    if args[2] == "add":
+                        page.write_text("新页面", "utf-8")
+                        sync.write_state({"pending": [], "sections": {}, "deploy": False})
+                with patch.dict(os.environ, EVE_TRANSLATOR_JOBS=str(root / "jobs")), \
+                        patch.object(sync, "NEWS", root), patch.object(sync, "STATE", state_file), \
+                        patch.object(sync, "prepare_page", return_value=("# 稿件", "site", {})), \
+                        patch.object(sync, "run", side_effect=command), \
+                        patch.object(sync, "register_deals", side_effect=deals), \
+                        patch.object(runtime, "cooling", return_value="2099-01-01T00:00:00Z" if label == "quota" else None), \
+                        patch.object(sync, "git_save") as save:
+                    sync.write_state({"pending": [slug], "sections": {}, "deploy": False})
+                    if label == "written":
+                        sync.publish()
+                        self.assertEqual(save.call_args.args, ([state_file, page, calendar], f"天书：收录 {slug}"))
+                        self.assertTrue(sync.read_state()["deploy"])
+                        continue
+                    with self.assertRaises(SystemExit):
+                        sync.publish()
+                    self.assertFalse(page.exists())
+                    self.assertEqual(calendar.read_bytes(), original_calendar)
+                    self.assertEqual(sync.read_state()["pending"], [slug])
+                    if label == "quota":
+                        self.assertIn("modelRetryAfter", sync.read_state())
+                        self.assertEqual(save.call_args.args[0], [state_file])
+                    else:
+                        save.assert_not_called()
+
+    def test_deals_judgment_retries_once_then_reuses_checkpoint(self):
+        url = sync.ccp.page_url("winter-sale")
+        packet = {"slug": "winter-sale", "review": True, "reason": "促销公告", "covered": [], "task": "判断折扣"}
+        def bench(*args):
+            if len(args) == 2:
+                return dict(packet)
+            answer = json.loads(Path(args[3]).read_text("utf-8"))
+            if answer.get("bad"):
+                raise ValueError("折扣判断：不认识的字段 bad")
+            return {"slug": "winter-sale", "status": "written", "added": ["2026-11-26-plex"], "linked": []}
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, EVE_TRANSLATOR_JOBS=tmp), \
+                patch.object(sync, "workbench", side_effect=bench) as calls:
+            with patch.object(sync, "model_json", side_effect=[{"bad": 1}, {"entries": [], "link": []}]) as model:
+                self.assertTrue(sync.register_deals("winter-sale"))
+                self.assertEqual(model.call_count, 2)
+                self.assertEqual(model.call_args.args[1], "判断折扣")
+                self.assertIn("validation", model.call_args.args[2])
+                self.assertNotIn("task", model.call_args_list[0].args[2])
+            with patch.object(sync, "model_json", side_effect=AssertionError("不应重复判断")):
+                self.assertTrue(sync.register_deals("winter-sale"))
+            self.assertEqual(calls.call_args_list[0].args, ("deals", url))
+        with patch.object(sync, "workbench", return_value={"review": False, "reason": "补丁说明不收折扣"}), \
+                patch.object(sync, "model_json", side_effect=AssertionError("不应调用模型")):
+            self.assertFalse(sync.register_deals(SLUG))
+
 
 class PublicationTests(unittest.TestCase):
     def state(self):

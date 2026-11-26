@@ -76,7 +76,20 @@ export function validateCalendar(cal, newsSlugs = new Set()) {
     err('', '须为 { entries: [...] }');
     return errors;
   }
-  for (const f of Object.keys(cal)) if (f !== 'entries') err('', `不认识的顶层字段 ${f}`);
+  for (const f of Object.keys(cal)) if (f !== 'entries' && f !== 'skip') err('', `不认识的顶层字段 ${f}`);
+  if (cal.skip !== undefined) {
+    const linked = new Set(cal.entries.flatMap(e => (e && typeof e === 'object' ? newsList(e) : [])));
+    if (!Array.isArray(cal.skip)) err('skip', '须为短名数组');
+    else if (cal.skip.some(s => typeof s !== 'string' || !s)) err('skip', '每项须为天书短名');
+    else {
+      if (new Set(cal.skip).size !== cal.skip.length) err('skip', '短名重复');
+      if (cal.skip.some((s, i) => i && s < cal.skip[i - 1])) err('skip', '须按短名排序');
+      for (const s of cal.skip) {
+        if (!newsSlugs.has(s)) err('skip', `天书文章 ${s} 不存在`);
+        if (linked.has(s)) err('skip', `${s} 已有条目指向，不能同时判定不收`);
+      }
+    }
+  }
   const seen = new Set();
   for (const e of cal.entries) {
     const key = e?.key ?? '(无键)';
@@ -331,14 +344,117 @@ export function calendarPage(cal, today = new Date().toISOString().slice(0, 10))
 }
 
 /**
- * 漏登提示：分类为促销、发布于起点之后的公告，没有任何条目指向它；游戏内活动不进折扣清单。
+ * 漏登提示：分类为促销、发布于起点之后的公告，没有任何条目指向它，也不在已判定不收的 skip 里；游戏内活动不进折扣清单。
  * pages 为 [{ slug, published, cat }]，cat 为分类键。
  */
 export function missingCalendar(cal, pages) {
-  const covered = new Set(cal.entries.flatMap(newsList));
-  const day = v => (v instanceof Date ? v.toISOString().slice(0, 10) : String(v ?? ''));
+  const covered = new Set([...cal.entries.flatMap(newsList), ...(cal.skip ?? [])]);
   return pages
-    .filter(p => p.cat === 'offer' && day(p.published) >= CALENDAR_START && !covered.has(p.slug))
+    .filter(p => p.cat === 'offer' && isoDay(p.published) >= CALENDAR_START && !covered.has(p.slug))
     .map(p => p.slug)
     .sort();
+}
+
+const isoDay = v => (v instanceof Date ? v.toISOString().slice(0, 10) : String(v ?? ''));
+
+// 非促销分类的公告（资料片上线、周年庆等）也常带商城折扣，凭这些字眼决定要不要请模型判断。
+const STORE_HINT = /商城|商店|PLEX|欧米伽|多人物训练|技能提取器|超核|礼包|折扣|优惠|特惠|促销|[一二三四五六七八九]五?折/i;
+
+/**
+ * 收录天书后要不要判断折扣增补：已有条目指向本篇、已判定不收、补丁说明或起点之前的公告不判；促销分类必判；
+ * 其余分类出现商城或折扣字眼才判。text 为中文标题、英文标题与正文。返回 { review, reason, covered }。
+ */
+export function dealReview({ slug, cat, published, text }, cal) {
+  const covered = cal.entries.filter(e => newsList(e).includes(slug)).map(e => e.key);
+  const result = (review, reason) => ({ review, reason, covered });
+  if (covered.length) return result(false, `已有 ${covered.length} 项折扣指向本篇`);
+  if (cal.skip?.includes(slug)) return result(false, '已判定不收');
+  if (/^patch-notes-version-/.test(slug)) return result(false, '补丁说明不收折扣');
+  if (published !== undefined && isoDay(published) < CALENDAR_START) return result(false, `发布早于折扣清单起点 ${CALENDAR_START}`);
+  if (cat === 'offer') return result(true, '促销公告');
+  return STORE_HINT.test(text) ? result(true, '正文提到商城或折扣') : result(false, '正文未提到商城或折扣');
+}
+
+/** 与 day 前后 days 天内有交集的条目（结束未知按开始当天算），供判断是否同一次折扣。 */
+export function nearbyDeals(cal, day, days = 60) {
+  const t = Date.parse(`${isoDay(day)}T00:00Z`);
+  const from = new Date(t - days * 864e5).toISOString().slice(0, 10);
+  const to = new Date(t + days * 864e5).toISOString().slice(0, 10);
+  return cal.entries.filter(e => e.start.slice(0, 10) <= to && (e.end ?? e.start).slice(0, 10) >= from);
+}
+
+/** 从天书指令中取出“折扣板块”整段（含缩进子项），判断折扣时原样交给模型，规则只维护一处。 */
+export function dealRules(markdown) {
+  const m = String(markdown).match(/^- \*\*折扣板块\*\*[\s\S]*?(?=^- |(?![\s\S]))/m);
+  if (!m) throw new Error('天书指令中没有“折扣板块”一节');
+  return m[0].trim();
+}
+
+const LINK_FIELDS = new Set(['key', 'primary', 'set']);
+const LINK_SET = new Set(['nameEn', 'off', 'end', 'channel', 'discount', 'bonus']);
+
+/**
+ * 把折扣判断 { entries: [新条目], link: [条目键 | { key, primary, set }] } 并入清单。
+ * 新条目不写 news，由工具填本篇短名并按开始时间与键插入；link 把本篇挂到已有条目，primary 为真时本篇成为正式公告，
+ * set 只补改 nameEn、off、end、channel、discount、bonus。offer 为真（促销公告）且判断为空时，本篇记入 skip，以后不再判断；
+ * 有条目指向本篇时移出 skip。整份清单校验不过时抛错，不改动传入的清单。
+ * 返回 { calendar, added, linked, skipped, changed }。
+ */
+export function mergeDeals(cal, slug, answer, newsSlugs, { offer = false } = {}) {
+  const fail = msg => { throw new Error(`折扣判断：${msg}`); };
+  const isObject = v => v && typeof v === 'object' && !Array.isArray(v);
+  if (!isObject(answer)) fail('须为 { entries, link }');
+  for (const f of Object.keys(answer)) if (f !== 'entries' && f !== 'link') fail(`不认识的字段 ${f}`);
+  const adds = answer.entries ?? [];
+  const links = answer.link ?? [];
+  if (!Array.isArray(adds) || !Array.isArray(links)) fail('entries 与 link 须为数组');
+
+  const entries = cal.entries.map(e => ({ ...e }));
+  const byKey = new Map(entries.map(e => [e.key, e]));
+  const linked = [];
+  for (const raw of links) {
+    const link = typeof raw === 'string' ? { key: raw } : raw;
+    if (!isObject(link)) fail('link 每项须为条目键或 { key, primary, set }');
+    for (const f of Object.keys(link)) if (!LINK_FIELDS.has(f)) fail(`link 不认识的字段 ${f}`);
+    const e = byKey.get(link.key);
+    if (!e) fail(`link 指向不存在的条目 ${link.key}`);
+    if (link.primary !== undefined && typeof link.primary !== 'boolean') fail(`${link.key}：primary 须为布尔值`);
+    if (link.set !== undefined) {
+      if (!isObject(link.set)) fail(`${link.key}：set 须为对象`);
+      for (const [f, v] of Object.entries(link.set)) {
+        if (!LINK_SET.has(f)) fail(`${link.key}：set 只能改 ${[...LINK_SET].join('、')}，不能改 ${f}`);
+        if (v === null || v === undefined) fail(`${link.key}：set.${f} 不能为空`);
+        e[f] = v;
+      }
+    }
+    const list = newsList(e);
+    const next = link.primary ? [slug, ...list.filter(s => s !== slug)] : list.includes(slug) ? list : [...list, slug];
+    e.news = next.length === 1 ? next[0] : next;
+    linked.push(e.key);
+  }
+
+  const added = [];
+  for (const raw of adds) {
+    if (!isObject(raw)) fail('entries 每项须为对象');
+    const key = raw.key ?? '(无键)';
+    for (const f of Object.keys(raw)) if (!ENTRY_FIELDS.has(f)) fail(`${key}：不认识的字段 ${f}`);
+    if (raw.news !== undefined) fail(`${key}：新条目不写 news，由工具填本篇短名`);
+    if (byKey.has(raw.key)) fail(`${key}：键已存在；同一次折扣用 link 挂到已有条目`);
+    const e = Object.fromEntries([...ENTRY_FIELDS].filter(f => f !== 'news' && raw[f] !== undefined).map(f => [f, raw[f]]));
+    e.news = slug;
+    const at = entries.findIndex(x => x.start > e.start || (x.start === e.start && x.key > e.key));
+    entries.splice(at < 0 ? entries.length : at, 0, e);
+    byKey.set(e.key, e);
+    added.push(e.key);
+  }
+
+  const calendar = { ...cal, entries };
+  const skipped = offer && !added.length && !linked.length;
+  const skip = (cal.skip ?? []).filter(s => s !== slug);
+  if (skipped) skip.push(slug);
+  if (skip.length) calendar.skip = skip.sort();
+  else delete calendar.skip;
+  const errors = validateCalendar(calendar, newsSlugs);
+  if (errors.length) fail(`清单校验不通过：\n${errors.join('\n')}`);
+  return { calendar, added, linked, skipped, changed: JSON.stringify(calendar) !== JSON.stringify(cal) };
 }

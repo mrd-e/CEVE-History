@@ -15,9 +15,11 @@
 - **正史板块**（`/lore/`）收 universe.eveonline.com 官方背景故事，只在点名时逐篇收录，不批量补译；栏目照官方分类（`scripts/news-lore.mjs` 的 `LORE_COLUMNS`），不自创。
   - 每篇一个文件 `src/news/lore/<短名>.md`，短名取 lore 链接末段，由 `news-workbench lore` 生成。字段：`title`、`titleEn`、`source`（lore 原文链接）、`yc`（`YC128-11-09`）、`published`（与 `yc` 同日的公历）、`column`（官方分类键）、可选 `cover`、`translation`（`site`）。工具写入，不手改；正文可人工订正。
   - eveonline.com 上的 lore 类新闻仍按天书公告收录，在该篇加 `lore: true` 交叉列入正史，网址和分类不变。
-- **折扣板块**（`/deals/`）只收官方商城折扣与赠送，纯涂装、SKINR 与游戏内活动不收；数据只在 `src/news/calendar.json`，自己逐条撰写，不导入外部表，不写来源或备注字段。
+- **折扣板块**（`/deals/`）只收官方商城折扣与赠送，纯涂装、SKINR 与游戏内活动不收，涂装主题礼包含 PLEX、欧米伽等其他商品的按 `pack` 收；数据只在 `src/news/calendar.json`，自己逐条撰写，不导入外部表，不写来源或备注字段。
   - `entries` 每项：`key`（`<开始日期>-<英文短词>`）、`name`、可选 `nameEn`、`deal`（优惠类型，取值与分档见 `scripts/news-calendar.mjs` 的 `CALENDAR_DEALS`）、`off`（最高减免百分比，七五折写 25；PLEX 必写，赠送不写）、`start`、可选 `end`、可选 `channel`（`web`／`game`／`both`）、`discount`、`bonus`、`news`。
   - **赠送与买赠边界**：`gift-omega`、`gift-plex` 只收免费领取及象征性极低价领取（如 10 PLEX 换 7 天欧米伽），不写 `off` 与 `discount`。原价买某商品附赠另一商品（如买欧米伽送 PLEX、买多人物训练送欧米伽）不算赠送，按实付主商品和支付方式归类（不硬折算 `off`），赠品写进 `bonus`。
   - **渠道与支付方式**：官网简中常把网页商城（EVE Store，现金结算）也译成“新伊甸商城”，不得只看中文商城名填 `channel` 或区分现金／PLEX 购买；以计价货币（美元／现金 → `web`；PLEX → `game`）、商城链接（`store.eveonline.com` → `web`）或英文原文为准。
   - 时间一律 UTC，写 `YYYY-MM-DD` 或 `YYYY-MM-DDTHH:MM`；只写日期的结束算到当天 23:59。不收 2021-01-01 以前开始的。同一次折扣只记一条；`news` 是天书短名或短名数组，首个为明细里链接的正式公告，其余（预告等）一并算已登记。
+  - 顶层 `skip` 列判定不收的促销公告短名（按短名排序），由折扣判断在促销公告无可收条目时写入；列入的不再判断、不再提示未登记，日后补登条目时自动移出。
+- 折扣板块整段（含子项）由 `npm run news -- deals` 原样交给收录后的折扣判断，判断所需的规则都须写在该段内，不得拆到别处。
 - 校验用 `npm run news:check`（同时校验正史板块和折扣清单，并列出起点后未登记折扣的促销公告，只提示不拦截）；页面核读目录 `/news/`、`/lore/`、`/deals/` 与对应详情页。

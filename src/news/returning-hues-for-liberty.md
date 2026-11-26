@@ -1,5 +1,5 @@
 ---
-title: 自由再登場の配色！
+title: 自由再登场的配色！
 titleEn: Returning Hues for Liberty!
 source: 'https://www.eveonline.com/news/view/returning-hues-for-liberty'
 published: '2025-06-20'

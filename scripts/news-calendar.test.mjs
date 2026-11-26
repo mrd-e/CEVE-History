@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { calendarPage, calendarRange, dealLabel, dealTier, missingCalendar, parseCalendarTime, validateCalendar } from './news-calendar.mjs';
+import { readFileSync } from 'node:fs';
+import {
+  calendarPage, calendarRange, dealLabel, dealReview, dealRules, dealTier, mergeDeals, missingCalendar, nearbyDeals,
+  parseCalendarTime, validateCalendar,
+} from './news-calendar.mjs';
 
 const NEWS = new Set(['plex-sale', 'harvest-is-here', 'harvest-is-coming']);
 const entry = (over = {}) => ({
@@ -194,4 +198,120 @@ test('漏登提示：只看起点后的促销公告，数组里的预告也算�
     { slug: 'old-sale', published: '2020-12-01', cat: 'offer' },
   ];
   assert.deepEqual(missingCalendar(calendar, pages), ['plex-sale']);
+});
+
+test('折扣预判：已登记、补丁说明与起点前不判，促销必判，其余看商城或折扣字眼', () => {
+  const calendar = cal(entry());
+  const review = over => dealReview({ slug: 'new-post', cat: 'preview', published: '2026-11-10', text: '', ...over }, calendar);
+  assert.deepEqual(review({ slug: 'plex-sale', cat: 'offer' }), { review: false, reason: '已有 1 项折扣指向本篇', covered: ['2026-10-24-plex'] });
+  assert.equal(review({ slug: 'patch-notes-version-23-02', text: 'PLEX' }).review, false);
+  assert.equal(review({ cat: 'offer', published: '2020-12-01' }).review, false);
+  assert.equal(review({ cat: 'offer' }).review, true);
+  assert.equal(review({ text: '资料片上线，新伊甸商城同步推出礼包' }).review, true);
+  assert.equal(review({ text: '技能八五折' }).review, true);
+  assert.equal(review({ text: '新舰船与新星系开放' }).review, false);
+});
+
+test('同期条目：开始或结束落在前后窗口内，结束未知按开始当天算', () => {
+  const calendar = cal(
+    entry({ key: '2026-08-01-old', start: '2026-08-01', end: '2026-08-31' }),
+    entry({ key: '2026-09-01-long', start: '2026-09-01', end: '2026-12-31' }),
+    entry({ key: '2026-12-20-open', start: '2026-12-20', end: undefined }),
+    entry({ key: '2027-02-01-late', start: '2027-02-01', end: undefined }),
+  );
+  assert.deepEqual(nearbyDeals(calendar, '2026-11-10').map(e => e.key), ['2026-09-01-long', '2026-12-20-open']);
+  assert.deepEqual(nearbyDeals(calendar, new Date('2026-11-10T00:00:00Z'), 80).map(e => e.key),
+    ['2026-08-01-old', '2026-09-01-long', '2026-12-20-open']);
+});
+
+test('折扣规则：取天书指令的折扣板块整段，缺失时报错', () => {
+  const rules = dealRules(readFileSync(new URL('../src/news/AGENTS.md', import.meta.url), 'utf8'));
+  assert.match(rules, /^- \*\*折扣板块\*\*/);
+  assert.match(rules, /赠送与买赠边界/);
+  assert.match(rules, /渠道与支付方式/);
+  assert.equal(dealRules('- **折扣板块**：只收商城\n  - 子项\n- **下一节**：无关').endsWith('子项'), true);
+  assert.throws(() => dealRules('- **天书**：无折扣'), /折扣板块/);
+});
+
+test('并入折扣：新条目按时间插入并填本篇短名，字段顺序固定，不改传入清单', () => {
+  const calendar = cal(entry(), entry({ key: '2026-12-01-plex', start: '2026-12-01', end: undefined, news: undefined }));
+  const news = new Set([...NEWS, 'new-post']);
+  const added = { channel: 'game', start: '2026-11-10', deal: 'gift-plex', name: '领 25 PLEX', key: '2026-11-10-gift' };
+  const r = mergeDeals(calendar, 'new-post', { entries: [added], link: [] }, news);
+  assert.deepEqual(r.added, ['2026-11-10-gift']);
+  assert.equal(r.changed, true);
+  assert.deepEqual(r.calendar.entries.map(e => e.key), ['2026-10-24-plex', '2026-11-10-gift', '2026-12-01-plex']);
+  assert.deepEqual(Object.keys(r.calendar.entries[1]), ['key', 'name', 'deal', 'start', 'channel', 'news']);
+  assert.equal(r.calendar.entries[1].news, 'new-post');
+  assert.equal(calendar.entries.length, 2);
+  assert.equal(mergeDeals(calendar, 'new-post', { entries: [], link: [] }, news).changed, false);
+});
+
+test('并入折扣：关联已有条目，正式公告排第一，只许补改约定字段', () => {
+  const calendar = cal(entry({ news: 'harvest-is-coming' }));
+  const news = new Set([...NEWS, 'new-post']);
+  const key = '2026-10-24-plex';
+  assert.deepEqual(mergeDeals(calendar, 'new-post', { link: [key] }, news).calendar.entries[0].news, ['harvest-is-coming', 'new-post']);
+  const primary = mergeDeals(calendar, 'new-post', { link: [{ key, primary: true, set: { end: '2026-11-03', off: 30 } }] }, news);
+  assert.deepEqual(primary.linked, [key]);
+  assert.deepEqual(primary.calendar.entries[0].news, ['new-post', 'harvest-is-coming']);
+  assert.equal(primary.calendar.entries[0].end, '2026-11-03');
+  assert.equal(primary.calendar.entries[0].off, 30);
+  const again = mergeDeals(primary.calendar, 'new-post', { link: [key] }, news);
+  assert.deepEqual(again.calendar.entries[0].news, ['new-post', 'harvest-is-coming']);
+  assert.equal(again.changed, false);
+  assert.throws(() => mergeDeals(calendar, 'new-post', { link: [{ key, set: { start: '2026-10-25' } }] }, news), /不能改 start/);
+  assert.throws(() => mergeDeals(calendar, 'new-post', { link: [{ key, set: { end: null } }] }, news), /不能为空/);
+  assert.throws(() => mergeDeals(calendar, 'new-post', { link: ['2026-01-01-none'] }, news), /不存在的条目/);
+  assert.throws(() => mergeDeals(calendar, 'new-post', { link: [{ key, primary: 'yes' }] }, news), /布尔值/);
+});
+
+test('并入折扣：拦下格式不符、自带 news、重复键与整份清单校验错误', () => {
+  const calendar = cal(entry());
+  const news = new Set([...NEWS, 'new-post']);
+  const ok = { key: '2026-11-10-gift', name: '领 25 PLEX', deal: 'gift-plex', start: '2026-11-10' };
+  const merge = answer => () => mergeDeals(calendar, 'new-post', answer, news);
+  assert.throws(merge([]), /须为 \{ entries, link \}/);
+  assert.throws(merge({ entries: [], note: '' }), /不认识的字段 note/);
+  assert.throws(merge({ entries: {} }), /须为数组/);
+  assert.throws(merge({ entries: [{ ...ok, news: 'new-post' }] }), /不写 news/);
+  assert.throws(merge({ entries: [{ ...ok, source: 'x' }] }), /不认识的字段 source/);
+  assert.throws(merge({ entries: [{ ...ok, key: '2026-10-24-plex', start: '2026-10-24' }] }), /键已存在/);
+  assert.throws(merge({ entries: [ok, ok] }), /键已存在/);
+  assert.throws(merge({ entries: [{ ...ok, off: 10 }] }), /赠送不写 off/);
+  assert.throws(() => mergeDeals(calendar, 'missing-post', { entries: [ok] }, news), /天书文章 missing-post 不存在/);
+});
+
+test('判定不收：促销公告判断为空记入 skip，以后预判与漏登提示都跳过，登记条目时移出', () => {
+  const news = new Set([...NEWS, 'skin-sale', 'new-post']);
+  const empty = { entries: [], link: [] };
+  assert.equal(mergeDeals(cal(entry()), 'new-post', empty, news).calendar.skip, undefined);
+  const first = mergeDeals({ ...cal(entry()), skip: ['skin-sale'] }, 'new-post', empty, news, { offer: true });
+  assert.equal(first.skipped, true);
+  assert.equal(first.changed, true);
+  assert.deepEqual(first.calendar.skip, ['new-post', 'skin-sale']);
+  assert.deepEqual(validateCalendar(first.calendar, news), []);
+  assert.deepEqual(dealReview({ slug: 'new-post', cat: 'offer', published: '2026-11-10', text: '' }, first.calendar),
+    { review: false, reason: '已判定不收', covered: [] });
+  const pages = ['new-post', 'skin-sale', 'harvest-is-here'].map(slug => ({ slug, published: '2026-11-10', cat: 'offer' }));
+  assert.deepEqual(missingCalendar(first.calendar, pages), ['harvest-is-here']);
+  assert.equal(mergeDeals(first.calendar, 'new-post', empty, news, { offer: true }).changed, false);
+
+  const ok = { key: '2026-11-10-gift', name: '领 25 PLEX', deal: 'gift-plex', start: '2026-11-10' };
+  const listed = mergeDeals(first.calendar, 'new-post', { entries: [ok] }, news, { offer: true });
+  assert.equal(listed.skipped, false);
+  assert.deepEqual(listed.calendar.skip, ['skin-sale']);
+  const cleared = mergeDeals(listed.calendar, 'skin-sale', { link: ['2026-10-24-plex'] }, news, { offer: true });
+  assert.equal(Object.hasOwn(cleared.calendar, 'skip'), false);
+});
+
+test('判定不收：skip 须为已有天书的短名，不重复、按序，且不能同时有条目指向', () => {
+  const errors = skip => validateCalendar({ ...cal(entry()), skip }, NEWS).join('\n');
+  assert.match(errors('skin-sale'), /须为短名数组/);
+  assert.match(errors(['']), /每项须为天书短名/);
+  assert.match(errors(['missing-post']), /天书文章 missing-post 不存在/);
+  assert.match(errors(['harvest-is-here', 'harvest-is-here']), /短名重复/);
+  assert.match(errors(['harvest-is-here', 'harvest-is-coming']), /须按短名排序/);
+  assert.match(errors(['plex-sale']), /plex-sale 已有条目指向/);
+  assert.match(validateCalendar({ ...cal(entry()), note: '' }, NEWS).join('\n'), /不认识的顶层字段 note/);
 });
