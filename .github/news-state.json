@@ -88,6 +88,6 @@
       }
     }
   },
-  "deploy": true,
+  "deploy": false,
   "patchPublishedAt": "2026-11-26T11:00:17.672Z"
 }
