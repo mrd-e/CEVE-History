@@ -24,6 +24,6 @@
 
 ## 验收
 
-- 实现入口：`.github/news-worker.mjs`、`.github/workflows/news.yml` 与 `scripts/ci-news/sync.py` 的扫描、发布和部署阶段。
+- 实现入口：`.github/news-worker.mjs`、`.github/workflows/news.yml` 与 `scripts/ci-news/sync.py` 的扫描、收录与收尾提交（`scan`、`publish`、`finish`）。
 - 回归入口为 `scripts/news-worker.test.mjs`、`scripts/news-workflow.test.mjs` 与 Python 扫描测试。修改此流程时须验证无变化不调度、已有运行不重复调度、补丁独立检测、冷却和部署边界，以及 Actions 最终指纹判断；现有用例未覆盖的路径需补充验证。
 - 仓库代码、Cloudflare 已部署脚本和触发表达式分别验证；本地测试通过不能报告线上配置已生效。

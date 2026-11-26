@@ -3154,7 +3154,8 @@
       "start": "2026-10-24",
       "end": "2026-11-03T23:59",
       "channel": "game",
-      "discount": "每日阿尔法注入器买一送二（折合三三折）"
+      "discount": "每日阿尔法注入器买一送二（折合三三折）",
+      "news": "crimson-harvest-sale-in-the-nes"
     },
     {
       "key": "2026-10-24-nes-booster-2for1",
@@ -3165,7 +3166,8 @@
       "start": "2026-10-24",
       "end": "2026-11-03T23:59",
       "channel": "game",
-      "discount": "大脑加速器买一送一"
+      "discount": "大脑加速器买一送一",
+      "news": "crimson-harvest-sale-in-the-nes"
     },
     {
       "key": "2026-10-24-nes-hypercore-3for1",
@@ -3176,7 +3178,8 @@
       "start": "2026-10-24",
       "end": "2026-11-03T23:59",
       "channel": "game",
-      "discount": "超核买一送二（折合三三折）"
+      "discount": "超核买一送二（折合三三折）",
+      "news": "crimson-harvest-sale-in-the-nes"
     },
     {
       "key": "2026-10-24-nes-mastery-packs-25",
@@ -3187,7 +3190,8 @@
       "start": "2026-10-24",
       "end": "2026-11-03T23:59",
       "channel": "game",
-      "discount": "1 至 5 级大师包七五折；专家系统买一送一"
+      "discount": "1 至 5 级大师包七五折；专家系统买一送一",
+      "news": "crimson-harvest-sale-in-the-nes"
     },
     {
       "key": "2026-10-24-plex-up-to-25",
@@ -3223,7 +3227,10 @@
       "channel": "web",
       "discount": "价值 60 美元以上的礼包售 30 美元，每账号限购一次",
       "bonus": "500 PLEX、64.8 万技能点、天才型“增益”大脑加速器、新海军战列巡洋舰涂装等",
-      "news": "the-fractured-skies-expansion-is-here"
+      "news": [
+        "the-fractured-skies-expansion-is-here",
+        "up-to-25-off-omega-expansion-deals"
+      ]
     },
     {
       "key": "2026-11-10-fractured-skies-free-omega",
@@ -3233,7 +3240,10 @@
       "end": "2026-11-20",
       "channel": "game",
       "bonus": "新伊甸商城免费领取 7 天欧米伽克隆",
-      "news": "the-fractured-skies-expansion-is-here"
+      "news": [
+        "the-fractured-skies-expansion-is-here",
+        "up-to-25-off-omega-expansion-deals"
+      ]
     },
     {
       "key": "2026-11-10-fractured-skies-omega-25",
@@ -3244,7 +3254,10 @@
       "end": "2026-11-20",
       "channel": "game",
       "discount": "1 个月 375（七五折）、3 个月 960（八折）、6 个月 1,785 PLEX（八五折）",
-      "news": "the-fractured-skies-expansion-is-here"
+      "news": [
+        "the-fractured-skies-expansion-is-here",
+        "up-to-25-off-omega-expansion-deals"
+      ]
     },
     {
       "key": "2026-11-10-fractured-skies-omega-plex",

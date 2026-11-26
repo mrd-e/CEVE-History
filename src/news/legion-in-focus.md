@@ -69,7 +69,7 @@ Legion资料片在军团项目奠定的基础上新增了自由任务，进一�
 
 ## 部署准备
 
-Legion资料片推出了两款强大的新型战舰，分别是萨拉希尔号和巴巴罗加号。
+Legion资料片推出了两款强大的新型战舰，分别是萨拉希尔号和巴巴罗加级。
 
 ![Two new ships - Legion](https://images.ctfassets.net/7lhcm73ukv5p/2VDkQUshrgL8792a7RDRgJ/eb4c5d1e2e6966644d7267bae249b28e/2-Ship22_3840x2160.jpg)
 ![Two new ships - Legion](https://images.ctfassets.net/7lhcm73ukv5p/9XdXlsAQSZu21lAUMA3Ov/ada8820da2c4b805c76b888ee8526fe4/2-Ship11_3840x2160.jpg)
@@ -80,11 +80,11 @@ Legion资料片推出了两款强大的新型战舰，分别是萨拉希尔号�
 
 ![](https://images.ctfassets.net/7lhcm73ukv5p/32tvQQZtjJkH1fIlMqh2zC/28570f7199834e9d5ef8b0a26509fc3b/Sarathiel-stats.PNG)
 
-巴巴罗加号是三神裔对帝国掠夺舰做出的回应，具有无情、优雅和火力凶猛等特点。通过强化追踪系统、提升最佳射程并最大化过载加成后，这艘舰船可以从超远距离造成巨大的分解伤害。巴巴罗加号可通过装配堡垒装备来获得大幅攻防加成，其抗击打能力远胜于勒沙克级，还能对非旗舰舰船造成碾压级伤害。
+巴巴罗加级是三神裔对帝国掠夺舰做出的回应，具有无情、优雅和火力凶猛等特点。通过强化追踪系统、提升最佳射程并最大化过载加成后，这艘舰船可以从超远距离造成巨大的分解伤害。巴巴罗加级可通过装配堡垒装备来获得大幅攻防加成，其抗击打能力远胜于勒沙克级，还能对非旗舰舰船造成碾压级伤害。
 
 ![](https://images.ctfassets.net/7lhcm73ukv5p/5Tn06dK2YxVGFxIjHYlswT/4ed28fc91dbd2be9a7a6e39c5368ae27/2025.05.06.13.46.06.jpg)
 
-巴巴罗加号采用了和勒沙克级一样的5-4-8槽位布局，足以容纳顶级装甲防御装备，且尽享由掠夺舰级和三神裔势力提供的实用高能量槽加成。在勒沙克级蓝图副本上执行发明任务可以获得巴巴罗加蓝图副本。这些舰船必将大受欢迎，精明的工业家们不妨调整产线以抢占市场，攫取丰厚利润！
+巴巴罗加级采用了和勒沙克级一样的5-4-8槽位布局，足以容纳顶级装甲防御装备，且尽享由掠夺舰级和三神裔势力提供的实用高能量槽加成。在勒沙克级蓝图副本上执行发明任务可以获得巴巴罗加蓝图副本。这些舰船必将大受欢迎，精明的工业家们不妨调整产线以抢占市场，攫取丰厚利润！
 
 ![](https://images.ctfassets.net/7lhcm73ukv5p/aP9J4j84qLzY9arSY8eqV/9e7f8f04672be6852b5e270deb777e1a/Babaroga-stats.PNG)
 

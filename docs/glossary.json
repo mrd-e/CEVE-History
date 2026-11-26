@@ -60,7 +60,11 @@
       "note": "舰船名，超级航母（大航），属超旗；正文优先用“万古”，中文船型全名为“万古级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "万古级"
+        }
+      ]
     },
     {
       "term": "AFK",
@@ -206,7 +210,10 @@
       "kind": "ship",
       "links": [
         {
-          "word": "灾难"
+          "word": "灾难",
+          "exclude_suffixes": [
+            "性"
+          ]
         }
       ]
     },
@@ -243,7 +250,11 @@
       "note": "舰船名；正文优先用“使徒”，中文船型全名为“使徒级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "使徒级"
+        }
+      ]
     },
     {
       "term": "Apotheosis",
@@ -280,7 +291,7 @@
       "kind": "ship",
       "links": [
         {
-          "word": "主宰"
+          "word": "主宰级"
         }
       ]
     },
@@ -291,7 +302,11 @@
       "note": "舰船名，航空母舰（小航），不是超旗；正文优先用“执政官”，中文船型全名为“执政官级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "执政官"
+        }
+      ]
     },
     {
       "term": "Ares",
@@ -315,7 +330,7 @@
       "kind": "ship",
       "links": [
         {
-          "word": "方舟"
+          "word": "方舟级"
         }
       ]
     },
@@ -505,7 +520,11 @@
       "note": "舰船名，泰坦，属超旗；正文优先用“神使”，中文船型全名为“神使级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "神使"
+        }
+      ]
     },
     {
       "term": "awox",
@@ -530,7 +549,11 @@
       "note": "舰船名，泰坦，属超旗；正文优先用“阿扎里尔”，中文船型全名为“阿扎里尔级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "阿扎里尔"
+        }
+      ]
     },
     {
       "term": "Azbel",
@@ -639,7 +662,11 @@
       "note": "舰船名；正文优先用“挑战”，中文船型全名为“挑战级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "挑战级"
+        }
+      ]
     },
     {
       "term": "Bestla",
@@ -689,7 +716,10 @@
       "kind": "ship",
       "links": [
         {
-          "word": "天梯"
+          "word": "天梯",
+          "exclude_suffixes": [
+            "联盟"
+          ]
         }
       ]
     },
@@ -700,7 +730,11 @@
       "note": "舰船名；正文优先用“黑鸟”，中文船型全名为“黑鸟级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "黑鸟级"
+        }
+      ]
     },
     {
       "term": "Boobook",
@@ -828,7 +862,11 @@
       "note": "舰船名；正文优先用“爆发”，中文船型全名为“爆发级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "爆发级"
+        }
+      ]
     },
     {
       "term": "Bustard",
@@ -980,7 +1018,11 @@
       "note": "舰船名；正文优先用“促进”，中文船型全名为“促进级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "促进级"
+        }
+      ]
     },
     {
       "term": "Catalyst Navy Issue",
@@ -1002,7 +1044,11 @@
       "note": "舰船名；正文优先用“星空”，中文船型全名为“星空级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "星空级"
+        }
+      ]
     },
     {
       "term": "Cenotaph",
@@ -1013,7 +1059,7 @@
       "kind": "ship",
       "links": [
         {
-          "word": "纪念碑"
+          "word": "纪念碑级"
         }
       ]
     },
@@ -1089,7 +1135,11 @@
       "note": "舰船名，航空母舰（小航），不是超旗；正文优先用“奇美拉”，中文船型全名为“奇美拉级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "奇美拉"
+        }
+      ]
     },
     {
       "term": "Chremoas",
@@ -1159,7 +1209,11 @@
       "note": "舰船名；特殊护卫舰，中文船型全名为“蟑螂级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "蟑螂级"
+        }
+      ]
     },
     {
       "term": "Coercer",
@@ -1248,7 +1302,10 @@
       "kind": "ship",
       "links": [
         {
-          "word": "海燕"
+          "word": "海燕",
+          "exclude_suffixes": [
+            "联盟"
+          ]
         }
       ]
     },
@@ -1320,7 +1377,11 @@
       "note": "舰船名；正文优先用“黑鸦”，中文船型全名为“黑鸦级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "黑鸦级"
+        }
+      ]
     },
     {
       "term": "Crucifier",
@@ -1329,7 +1390,11 @@
       "note": "舰船名；正文优先用“磨难”，中文船型全名为“磨难级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "磨难级"
+        }
+      ]
     },
     {
       "term": "Crucifier Navy Issue",
@@ -1366,7 +1431,11 @@
       "kind": "ship",
       "links": [
         {
-          "word": "十字军"
+          "word": "十字军",
+          "exclude_prefixes": [
+            "北方",
+            "帝国"
+          ]
         }
       ]
     },
@@ -1451,7 +1520,11 @@
       "note": "舰船名；正文优先用“塞纳波”，中文船型全名为“塞纳波级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "塞纳波级"
+        }
+      ]
     },
     {
       "term": "cyno",
@@ -1527,7 +1600,11 @@
       "kind": "ship",
       "links": [
         {
-          "word": "执事"
+          "word": "执事",
+          "exclude_suffixes": [
+            "会",
+            "区"
+          ]
         }
       ]
     },
@@ -1564,7 +1641,11 @@
       "note": "舰船名；正文优先用“奉献”，中文船型全名为“奉献级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "奉献级"
+        }
+      ]
     },
     {
       "term": "Dominix",
@@ -1727,7 +1808,7 @@
       "kind": "ship",
       "links": [
         {
-          "word": "梯队"
+          "word": "梯队级"
         }
       ]
     },
@@ -1738,7 +1819,11 @@
       "note": "舰船名；正文优先用“回声”，中文船型全名为“回声级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "回声级"
+        }
+      ]
     },
     {
       "term": "ECM",
@@ -1771,7 +1856,7 @@
       "kind": "ship",
       "links": [
         {
-          "word": "执法者"
+          "word": "执法者级"
         }
       ]
     },
@@ -1821,7 +1906,11 @@
       "note": "舰船名，泰坦，属超旗；正文优先用“俄洛巴斯”，中文船型全名为“俄洛巴斯级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "俄洛巴斯"
+        }
+      ]
     },
     {
       "term": "Eris",
@@ -2034,7 +2123,11 @@
       "note": "舰船名；正文优先用“恶魔”，中文船型全名为“恶魔级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "恶魔级"
+        }
+      ]
     },
     {
       "term": "fleet",
@@ -2124,7 +2217,10 @@
       "kind": "ship",
       "links": [
         {
-          "word": "加姆"
+          "word": "加姆",
+          "exclude_suffixes": [
+            "梅尔"
+          ]
         }
       ]
     },
@@ -2137,7 +2233,7 @@
       "kind": "ship",
       "links": [
         {
-          "word": "格里"
+          "word": "格里级"
         }
       ]
     },
@@ -2170,7 +2266,11 @@
       "note": "舰船名；正文优先用“灵感”，中文船型全名为“灵感级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "灵感级"
+        }
+      ]
     },
     {
       "term": "Gold Magnate",
@@ -2244,7 +2344,11 @@
       "note": "舰船名；正文优先用“守卫”，中文船型全名为“守卫级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "守卫级"
+        }
+      ]
     },
     {
       "term": "Guardian-Vexor",
@@ -2281,7 +2385,11 @@
       "kind": "ship",
       "links": [
         {
-          "word": "先驱者"
+          "word": "先驱者",
+          "exclude_suffixes": [
+            "阴谋论",
+            "武器"
+          ]
         }
       ]
     },
@@ -2344,7 +2452,14 @@
       "note": "舰船名，超级航母（大航），属超旗；正文优先用“冥府”，中文船型全名为“冥府级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "冥府",
+          "exclude_suffixes": [
+            "之光"
+          ]
+        }
+      ]
     },
     {
       "term": "Helios",
@@ -2379,7 +2494,11 @@
       "note": "舰船名；正文优先用“异端”，中文船型全名为“异端级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "异端级"
+        }
+      ]
     },
     {
       "term": "Heron",
@@ -2481,7 +2600,12 @@
       "kind": "ship",
       "links": [
         {
-          "word": "暴风"
+          "word": "暴风",
+          "exclude_suffixes": [
+            "雪",
+            "眼",
+            "骤雨"
+          ]
         }
       ]
     },
@@ -2624,7 +2748,11 @@
       "kind": "ship",
       "links": [
         {
-          "word": "帝国号"
+          "word": "帝国号",
+          "exclude_suffixes": [
+            "角",
+            "召"
+          ]
         }
       ]
     },
@@ -2635,7 +2763,11 @@
       "note": "舰船名；正文优先用“激进”，中文船型全名为“激进级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "激进级"
+        }
+      ]
     },
     {
       "term": "Imperial Navy Slicer",
@@ -2803,7 +2935,10 @@
       "kind": "ship",
       "links": [
         {
-          "word": "克勒斯"
+          "word": "克勒斯",
+          "exclude_prefixes": [
+            "赫拉"
+          ]
         }
       ]
     },
@@ -2855,7 +2990,10 @@
       "kind": "ship",
       "links": [
         {
-          "word": "麒麟"
+          "word": "麒麟",
+          "exclude_prefixes": [
+            "玉"
+          ]
         }
       ]
     },
@@ -2888,7 +3026,11 @@
       "note": "舰船名，泰坦，属超旗；正文优先用“科莫多”，中文船型全名为“科莫多级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "科莫多"
+        }
+      ]
     },
     {
       "term": "Kronos",
@@ -2988,7 +3130,11 @@
       "note": "舰船名，泰坦，属超旗；正文优先用“勒维亚坦”，中文船型全名为“勒维亚坦级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "勒维亚坦"
+        }
+      ]
     },
     {
       "term": "Lif",
@@ -3093,7 +3239,11 @@
       "note": "舰船名；正文优先用“富豪”，中文船型全名为“富豪级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "富豪级"
+        }
+      ]
     },
     {
       "term": "Magnate Navy Issue",
@@ -3117,7 +3267,10 @@
       "kind": "ship",
       "links": [
         {
-          "word": "占星"
+          "word": "占星",
+          "exclude_suffixes": [
+            "系"
+          ]
         }
       ]
     },
@@ -3141,7 +3294,11 @@
       "note": "舰船名；正文优先用“恶意”，中文船型全名为“恶意级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "恶意级"
+        }
+      ]
     },
     {
       "term": "Maller",
@@ -3150,7 +3307,11 @@
       "note": "舰船名；正文优先用“暴君”，中文船型全名为“暴君级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "暴君级"
+        }
+      ]
     },
     {
       "term": "Mamba",
@@ -3200,7 +3361,7 @@
       "kind": "ship",
       "links": [
         {
-          "word": "元帅"
+          "word": "元帅级"
         }
       ]
     },
@@ -3441,7 +3602,11 @@
       "note": "舰船名，泰坦，属超旗；正文优先用“摩洛克”，中文船型全名为“摩洛克级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "摩洛克"
+        }
+      ]
     },
     {
       "term": "Monitor",
@@ -3570,7 +3735,11 @@
       "note": "舰船名；正文优先用“娜迦”，中文船型全名为“娜迦级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "娜迦级"
+        }
+      ]
     },
     {
       "term": "Naga Navy Issue",
@@ -3696,7 +3865,11 @@
       "note": "舰船名，航空母舰（小航），不是超旗；正文优先用“尼铎格尔”，中文船型全名为“尼铎格尔级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "尼铎格尔"
+        }
+      ]
     },
     {
       "term": "Nighthawk",
@@ -3744,7 +3917,11 @@
       "note": "舰船名；正文优先用“黑夜”，中文船型全名为“黑夜级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "黑夜级"
+        }
+      ]
     },
     {
       "term": "Nomad",
@@ -3775,7 +3952,11 @@
       "note": "舰船名，超级航母（大航），属超旗；正文优先用“夜神”，中文船型全名为“夜神级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "夜神"
+        }
+      ]
     },
     {
       "term": "Obelisk",
@@ -3823,7 +4004,11 @@
       "note": "舰船名；正文优先用“启示”，中文船型全名为“启示级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "启示级"
+        }
+      ]
     },
     {
       "term": "Omen Navy Issue",
@@ -3893,7 +4078,11 @@
       "note": "舰船名；正文优先用“预言”，中文船型全名为“预言级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "预言级"
+        }
+      ]
     },
     {
       "term": "Orca",
@@ -3954,7 +4143,11 @@
       "note": "舰船名；正文优先用“先驱”，中文船型全名为“先驱级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "先驱级"
+        }
+      ]
     },
     {
       "term": "Pacifier",
@@ -4024,7 +4217,11 @@
       "note": "舰船名；正文优先用“幽灵”，中文船型全名为“幽灵级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "幽灵级"
+        }
+      ]
     },
     {
       "term": "Pharolux",
@@ -4087,7 +4284,10 @@
       "kind": "ship",
       "links": [
         {
-          "word": "朝圣"
+          "word": "朝圣",
+          "exclude_suffixes": [
+            "者"
+          ]
         }
       ]
     },
@@ -4155,7 +4355,11 @@
       "note": "舰船名；正文优先用“教皇”，中文船型全名为“教皇级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "教皇级"
+        }
+      ]
     },
     {
       "term": "Porpoise",
@@ -4190,7 +4394,11 @@
       "note": "舰船名；正文优先用“实践”，中文船型全名为“实践级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "实践级"
+        }
+      ]
     },
     {
       "term": "Primae",
@@ -4214,7 +4422,7 @@
       "kind": "ship",
       "links": [
         {
-          "word": "探索"
+          "word": "探索级"
         }
       ]
     },
@@ -4238,7 +4446,11 @@
       "note": "舰船名；正文优先用“猎获”，中文船型全名为“猎获级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "猎获级"
+        }
+      ]
     },
     {
       "term": "Prophecy",
@@ -4247,7 +4459,11 @@
       "note": "舰船名；正文优先用“先知”，中文船型全名为“先知级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "先知级"
+        }
+      ]
     },
     {
       "term": "Prophecy Navy Issue",
@@ -4269,7 +4485,11 @@
       "note": "舰船名；正文优先用“分裂”，中文船型全名为“分裂级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "分裂级"
+        }
+      ]
     },
     {
       "term": "Prospect",
@@ -4409,7 +4629,11 @@
       "note": "舰船名，泰坦，属超旗；正文优先用“拉格纳洛克”，中文船型全名为“拉格纳洛克级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "拉格纳洛克"
+        }
+      ]
     },
     {
       "term": "Raiju",
@@ -4479,7 +4703,11 @@
       "note": "舰船名；正文优先用“乌鸦”，中文船型全名为“乌鸦级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "乌鸦级"
+        }
+      ]
     },
     {
       "term": "Raven Navy Issue",
@@ -4579,7 +4807,11 @@
       "note": "舰船名；正文优先用“神示”，中文船型全名为“神示级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "神示级"
+        }
+      ]
     },
     {
       "term": "Revelation Navy Issue",
@@ -4601,7 +4833,11 @@
       "note": "舰船名，超级航母（大航），属超旗；正文优先用“归魂者”，中文船型全名为“归魂者级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "归魂者级"
+        }
+      ]
     },
     {
       "term": "Rhea",
@@ -4761,7 +4997,7 @@
       "kind": "ship",
       "links": [
         {
-          "word": "手术刀"
+          "word": "手术刀级"
         }
       ]
     },
@@ -4813,7 +5049,11 @@
       "kind": "ship",
       "links": [
         {
-          "word": "镰刀"
+          "word": "镰刀",
+          "exclude_prefixes": [
+            "帝王",
+            "皇帝"
+          ]
         }
       ]
     },
@@ -4852,7 +5092,10 @@
       "kind": "ship",
       "links": [
         {
-          "word": "哨兵"
+          "word": "哨兵",
+          "exclude_suffixes": [
+            "军事区"
+          ]
         }
       ]
     },
@@ -4928,7 +5171,11 @@
       "note": "舰船名；正文优先用“罪恶”，中文船型全名为“罪恶级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "罪恶级"
+        }
+      ]
     },
     {
       "term": "Skiff",
@@ -4972,7 +5219,11 @@
       "note": "舰船名；正文优先用“破天”，中文船型全名为“破天级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "破天级"
+        }
+      ]
     },
     {
       "term": "Slasher",
@@ -5043,7 +5294,10 @@
       "kind": "ship",
       "links": [
         {
-          "word": "狂风"
+          "word": "狂风",
+          "exclude_suffixes": [
+            "暴雨"
+          ]
         }
       ]
     },
@@ -5069,7 +5323,10 @@
       "kind": "ship",
       "links": [
         {
-          "word": "刺客"
+          "word": "刺客",
+          "exclude_suffixes": [
+            "导师"
+          ]
         }
       ]
     },
@@ -5119,7 +5376,11 @@
       "note": "舰船名；正文优先用“唤风”，中文船型全名为“唤风级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "唤风级"
+        }
+      ]
     },
     {
       "term": "Stratios",
@@ -5389,7 +5650,11 @@
       "note": "舰船名，航空母舰（小航），不是超旗；正文优先用“绝念”，中文船型全名为“绝念级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "绝念"
+        }
+      ]
     },
     {
       "term": "Tholos",
@@ -5546,7 +5811,11 @@
       "note": "舰船名；正文优先用“台风”，中文船型全名为“台风级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "台风级"
+        }
+      ]
     },
     {
       "term": "Typhoon Fleet Issue",
@@ -5581,7 +5850,11 @@
       "note": "舰船名；正文优先用“流浪”，中文船型全名为“流浪级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "流浪级"
+        }
+      ]
     },
     {
       "term": "Valravn",
@@ -5616,7 +5889,11 @@
       "note": "舰船名，泰坦，属超旗；正文优先用“征服者”，中文船型全名为“征服者级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "征服者"
+        }
+      ]
     },
     {
       "term": "Vargur",
@@ -5651,7 +5928,11 @@
       "note": "舰船名；正文优先用“猛烈”，中文船型全名为“猛烈级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "猛烈级"
+        }
+      ]
     },
     {
       "term": "Velator",
@@ -5673,7 +5954,11 @@
       "note": "舰船名，超级航母（大航），属超旗；正文优先用“仇恨”，中文船型全名为“仇恨级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "仇恨级"
+        }
+      ]
     },
     {
       "term": "Vengeance",
@@ -5682,7 +5967,11 @@
       "note": "舰船名；正文优先用“复仇”，中文船型全名为“复仇级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "复仇级"
+        }
+      ]
     },
     {
       "term": "Venture",
@@ -5745,7 +6034,7 @@
       "kind": "ship",
       "links": [
         {
-          "word": "旅行者"
+          "word": "旅行者级"
         }
       ]
     },
@@ -5758,7 +6047,7 @@
       "kind": "ship",
       "links": [
         {
-          "word": "胜利者"
+          "word": "胜利者级"
         }
       ]
     },
@@ -5808,7 +6097,11 @@
       "note": "舰船名；正文优先用“警惕”，中文船型全名为“警惕级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "警惕级"
+        }
+      ]
     },
     {
       "term": "Vindicator",
@@ -5923,7 +6216,7 @@
       "kind": "ship",
       "links": [
         {
-          "word": "环绕"
+          "word": "环绕级"
         }
       ]
     },
@@ -5956,7 +6249,11 @@
       "note": "舰船名，超级航母（大航），属超旗；正文优先用“飞龙”，中文船型全名为“飞龙级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "飞龙"
+        }
+      ]
     },
     {
       "term": "Ymir",
@@ -6006,7 +6303,13 @@
       "kind": "ship",
       "links": [
         {
-          "word": "狂热"
+          "word": "狂热",
+          "exclude_prefixes": [
+            "最"
+          ],
+          "exclude_suffixes": [
+            "者"
+          ]
         }
       ]
     },
@@ -6030,7 +6333,11 @@
       "note": "舰船名，无畏，属旗舰；正文优先用“泽尼塔”，中文船型全名为“泽尼塔级”",
       "status": "已确认",
       "kind": "ship",
-      "links": []
+      "links": [
+        {
+          "word": "泽尼塔"
+        }
+      ]
     },
     {
       "term": "偷鸡",

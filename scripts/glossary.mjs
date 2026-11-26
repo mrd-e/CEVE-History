@@ -1,9 +1,9 @@
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const GLOSSARY = new URL("../docs/glossary.json", import.meta.url);
-const STATUSES = ["已确认", "待复核"];
+const GLOSSARY = new URL('../docs/glossary.json', import.meta.url);
+const STATUSES = ['已确认', '待复核'];
 const KINDS = ['ship', 'structure', 'term'];
 const HELP = `术语查询与校验；docs/glossary.json 是词条与蓝字匹配配置的唯一来源。
 
@@ -13,6 +13,9 @@ const HELP = `术语查询与校验；docs/glossary.json 是词条与蓝字匹�
   --limit <数量>  每页最多返回条数，默认 20，必须为正整数
   --offset <数量> 跳过的命中数，默认 0，必须为非负整数
   --check         只校验并报告词条、蓝字数量；须单独使用
+  --audit [文字]  按网站的蓝字规则渲染 src 下全部正文。不带文字：按蓝字统计次数并给例句；
+                  带文字：列出这串文字在可加蓝正文中的每处上下文，标明蓝字／重复不加蓝／未标。
+                  只可再配 --limit、--offset
   --help          显示本帮助；须单独使用
 
 关键词匹配原词、释义、误译提醒、备注、匹配取舍说明与蓝字写法，忽略英文大小写。
@@ -25,6 +28,7 @@ const HELP = `术语查询与校验；docs/glossary.json 是词条与蓝字匹�
   npm run glossary -- "泡泡"
   npm run glossary -- --status 待复核 --limit 10
   npm run glossary -- --kind ship --limit 10 --offset 10
+  npm run glossary -- --audit "格里" --limit 50
   npm run glossary:check
 
 数据维护：顶层 version:1、非空 entries 列表，不另同步 Markdown 词表。
@@ -35,18 +39,22 @@ const HELP = `术语查询与校验；docs/glossary.json 是词条与蓝字匹�
   kind：ship / structure / term，显式填写，不从备注措辞猜类别。
   links：自动蓝字配置列表，每项 { "word": "实际匹配文字" }；[] 表示只展示词条。
     匹配区分英文大小写，不同写法逐项登记；多个词条不得争用同一匹配文字。
-  links[].exclude_suffixes：可选排除后缀；如“泡泡”接“船”、“凤凰”接“城”时不标注。
+  links[].exclude_prefixes / exclude_suffixes：可选排除前文／后文；如“麒麟”前接“玉”、
+    “泡泡”后接“船”时不标注。只比对同一段文字，跨加粗、换行不生效。
   link_note：可选匹配取舍说明，记录同名冲突或刻意不标注的理由，不作事件依据。
 
-最长匹配优先，英文词保留边界检查；标题、引用、已有链接与代码不加蓝。
+每篇正文里同一词条只在第一次出现时加蓝，之后各种写法都保持原文。
+最长匹配优先，英文词保留边界检查；舰船词后紧跟“级”时连“级”一起加蓝，“级别”不算。
+标题、引用、容器标题、已有链接与代码不加蓝。
 不从“舰船名；”等备注前缀推定匹配。既有同名匹配保留实际生效的一项，
-其余保留释义并记 link_note，不擅自裁定译名；写作用语约定见 docs/terminology.md。
+其余保留释义并记 link_note，不擅自裁定译名；选词规则与写作用语约定见 docs/terminology.md。
+改 links 前后都用 --audit 查这串文字的全站上下文。
 修改后运行校验与构建；npm run check 和 npm run build 均先校验版本、字段、
 重复词条、重复蓝字和排除后缀，失败即停止，不跳过坏词条。
 `;
-const object = value => value !== null && typeof value === "object" && !Array.isArray(value);
-const text = value => typeof value === "string" && value.trim().length > 0;
-export const termId = term => `term-${[...term].map(c => c.codePointAt(0).toString(16)).join("-")}`;
+const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+const text = value => typeof value === 'string' && value.trim().length > 0;
+export const termId = term => `term-${[...term].map(c => c.codePointAt(0).toString(16)).join('-')}`;
 
 // JSON is the only data source. Return the existing template fields and stable anchors.
 export function parseGlossary(data) {
@@ -54,132 +62,231 @@ export function parseGlossary(data) {
   const keys = (value, allowed, label) => {
     for (const key of Object.keys(value)) if (!allowed.includes(key)) fail(`${label}未知字段 ${key}`);
   };
-  if (!object(data)) fail("必须是 JSON 对象");
-  keys(data, ["version", "entries"], "档案 ");
-  if (data.version !== 1 || !Array.isArray(data.entries) || !data.entries.length) fail("必须有 version:1 和非空 entries 列表");
+  if (!object(data)) fail('必须是 JSON 对象');
+  keys(data, ['version', 'entries'], '档案 ');
+  if (data.version !== 1 || !Array.isArray(data.entries) || !data.entries.length) fail('必须有 version:1 和非空 entries 列表');
   const terms = new Set(), words = new Map();
   return data.entries.map((entry, index) => {
     const label = `第 ${index + 1} 项 `;
     if (!object(entry)) fail(`${label}必须是对象`);
-    keys(entry, ["term", "meaning", "avoid", "note", "status", "kind", "links", "link_note"], label);
-    for (const field of ["term", "meaning", "note"]) if (!text(entry[field])) fail(`${label}${field} 必须是非空字符串`);
+    keys(entry, ['term', 'meaning', 'avoid', 'note', 'status', 'kind', 'links', 'link_note'], label);
+    for (const field of ['term', 'meaning', 'note']) if (!text(entry[field])) fail(`${label}${field} 必须是非空字符串`);
     if (entry.term !== entry.term.trim()) fail(`${label}term 不能有首尾空白`);
     if (terms.has(entry.term)) fail(`${label}重复词条 ${entry.term}`);
     terms.add(entry.term);
-    if (typeof entry.avoid !== "string") fail(`${entry.term} avoid 必须是字符串，无内容用空字符串`);
-    if (!STATUSES.includes(entry.status)) fail(`${entry.term} status 必须是 ${STATUSES.join(" / ")}`);
-    if (!KINDS.includes(entry.kind)) fail(`${entry.term} kind 必须是 ${KINDS.join(" / ")}`);
+    if (typeof entry.avoid !== 'string') fail(`${entry.term} avoid 必须是字符串，无内容用空字符串`);
+    if (!STATUSES.includes(entry.status)) fail(`${entry.term} status 必须是 ${STATUSES.join(' / ')}`);
+    if (!KINDS.includes(entry.kind)) fail(`${entry.term} kind 必须是 ${KINDS.join(' / ')}`);
     if (entry.link_note !== undefined && !text(entry.link_note)) fail(`${entry.term} link_note 必须是非空字符串`);
     if (!Array.isArray(entry.links)) fail(`${entry.term} links 必须是列表，不自动加蓝用 []`);
     for (const link of entry.links) {
       if (!object(link)) fail(`${entry.term} links 每项必须是对象`);
-      keys(link, ["word", "exclude_suffixes"], `${entry.term} links `);
+      keys(link, ['word', 'exclude_prefixes', 'exclude_suffixes'], `${entry.term} links `);
       if (!text(link.word) || link.word !== link.word.trim()) fail(`${entry.term} 蓝字 word 必须非空且无首尾空白`);
       if (words.has(link.word)) fail(`蓝字 ${link.word} 重复归属：${words.get(link.word)} / ${entry.term}`);
       words.set(link.word, entry.term);
-      if (link.exclude_suffixes !== undefined && (!Array.isArray(link.exclude_suffixes)
-        || !link.exclude_suffixes.every(text) || new Set(link.exclude_suffixes).size !== link.exclude_suffixes.length)) fail(`${entry.term} exclude_suffixes 必须是不重复的非空字符串列表`);
+      for (const field of ['exclude_prefixes', 'exclude_suffixes']) {
+        const list = link[field];
+        if (list !== undefined && (!Array.isArray(list) || !list.length || !list.every(text)
+          || new Set(list).size !== list.length)) fail(`${entry.term} 蓝字 ${link.word} ${field} 必须是不重复的非空字符串列表`);
+      }
     }
-    return { ...entry, note: entry.note.replaceAll("`", ""), id: termId(entry.term) };
+    return { ...entry, note: entry.note.replaceAll('`', ''), id: termId(entry.term) };
   });
 }
 
 export function readGlossary(file = GLOSSARY) {
-  try { return parseGlossary(JSON.parse(fs.readFileSync(file, "utf8"))); }
+  try { return parseGlossary(JSON.parse(fs.readFileSync(file, 'utf8'))); }
   catch (error) { throw new Error(`${file instanceof URL ? fileURLToPath(file) : file}：${error.message}`); }
 }
 
 export const glossaryEntries = readGlossary();
 
+const ENGLISH_START = /^[A-Za-z]/;
+const ENGLISH_END = /[A-Za-z]$/;
+const ALNUM = /[A-Za-z0-9]/;
+
+// The text a pattern links at position i, or "" when it does not apply there.
+function matchAt(value, i, { word, entry, exclude_prefixes = [], exclude_suffixes = [] }) {
+  if (!value.startsWith(word, i)) return '';
+  const end = i + word.length;
+  if (ENGLISH_START.test(word) && ALNUM.test(value[i - 1] ?? '')) return '';
+  if (ENGLISH_END.test(word) && ALNUM.test(value[end] ?? '')) return '';
+  if (exclude_prefixes.some(prefix => value.endsWith(prefix, i))) return '';
+  if (exclude_suffixes.some(suffix => value.startsWith(suffix, end))) return '';
+  // Ship classes: a following “级” belongs to the name; “级别” never names a class.
+  if (word.endsWith('级') && value[end] === '别') return '';
+  return entry.kind === 'ship' && !word.endsWith('级') && value[end] === '级' && value[end + 1] !== '别' ? `${word}级` : word;
+}
+
+// Each entry is linked at its first eligible occurrence per render (one page body).
+// When env.glossaryAudit is an array, every eligible text run and its hits are pushed to it.
 export function glossaryLinks(md, { entries = glossaryEntries } = {}) {
   const patterns = entries.flatMap(entry => entry.links.map(link => ({ ...link, entry })))
     .sort((a, b) => b.word.length - a.word.length);
 
-  md.core.ruler.after("inline", "glossary-links", (state) => {
+  md.core.ruler.after('inline', 'glossary-links', state => {
+    const audit = Array.isArray(state.env?.glossaryAudit) ? state.env.glossaryAudit : null;
+    const linked = new Set();
     let inQuote = 0;
     let inHeading = 0;
     for (const block of state.tokens) {
-      if (block.type === "blockquote_open") inQuote++;
-      if (block.type === "blockquote_close") inQuote--;
-      if (block.type === "heading_open") inHeading++;
-      if (block.type === "heading_close") inHeading--;
-      if (block.type !== "inline" || inQuote || inHeading || !block.children) continue;
+      if (block.type === 'blockquote_open') inQuote++;
+      if (block.type === 'blockquote_close') inQuote--;
+      if (block.type === 'heading_open') inHeading++;
+      if (block.type === 'heading_close') inHeading--;
+      if (block.type !== 'inline' || inQuote || inHeading || !block.children) continue;
       const result = [];
       let inLink = 0;
       for (const token of block.children) {
-        if (token.type === "link_open") inLink++;
-        if (token.type !== "text" || inLink) {
+        if (token.type === 'link_open') inLink++;
+        if (token.type !== 'text' || inLink) {
           result.push(token);
         } else {
           const value = token.content;
+          const hits = [];
           let start = 0;
           for (let i = 0; i < value.length;) {
-            const found = patterns.find(({ word, exclude_suffixes = [] }) => value.startsWith(word, i) &&
-              (!/^[A-Za-z]/.test(word) || !/[A-Za-z0-9]/.test(value[i - 1] ?? "")) &&
-              (!/[A-Za-z]$/.test(word) || !/[A-Za-z0-9]/.test(value[i + word.length] ?? "")) &&
-              !exclude_suffixes.some(suffix => value.startsWith(suffix, i + word.length)));
-            if (!found) { i++; continue; }
-            if (i > start) {
-              const plain = new state.Token("text", "", 0);
-              plain.content = value.slice(start, i);
-              result.push(plain);
+            let found, matched = '';
+            for (const pattern of patterns) {
+              matched = matchAt(value, i, pattern);
+              if (matched) { found = pattern; break; }
             }
-            const link = new state.Token("html_inline", "", 0);
-            link.content = `<a class="term-link" href="../../glossary/#${found.entry.id}" data-glossary-id="${found.entry.id}" title="查看术语解释">${md.utils.escapeHtml(found.word)}</a>`;
-            result.push(link);
-            i += found.word.length;
-            start = i;
+            if (!found) { i++; continue; }
+            const { id } = found.entry;
+            const repeat = linked.has(id);
+            hits.push({ index: i, text: matched, id, repeat });
+            // A repeat stays plain text but is skipped whole, so shorter words cannot match inside it.
+            if (!repeat) {
+              linked.add(id);
+              if (i > start) {
+                const plain = new state.Token('text', '', 0);
+                plain.content = value.slice(start, i);
+                result.push(plain);
+              }
+              const link = new state.Token('html_inline', '', 0);
+              link.content = `<a class="term-link" href="../../glossary/#${id}" data-glossary-id="${id}" title="查看术语解释">${md.utils.escapeHtml(matched)}</a>`;
+              result.push(link);
+            }
+            i += matched.length;
+            if (!repeat) start = i;
           }
           if (start < value.length) {
-            const plain = new state.Token("text", "", 0);
+            const plain = new state.Token('text', '', 0);
             plain.content = value.slice(start);
             result.push(plain);
           }
+          audit?.push({ value, hits });
         }
-        if (token.type === "link_close") inLink--;
+        if (token.type === 'link_close') inLink--;
       }
       block.children = result;
     }
   });
 }
 
-export function queryGlossary(entries, { query = "", kind, status, limit = 20, offset = 0 } = {}) {
-  if (kind && !KINDS.includes(kind)) throw new Error(`kind 必须是 ${KINDS.join(" / ")}`);
-  if (status && !STATUSES.includes(status)) throw new Error(`status 必须是 ${STATUSES.join(" / ")}`);
-  if (!Number.isSafeInteger(limit) || limit < 1 || !Number.isSafeInteger(offset) || offset < 0) throw new Error("limit 必须为正整数，offset 必须为非负整数");
+export function queryGlossary(entries, { query = '', kind, status, limit = 20, offset = 0 } = {}) {
+  if (kind && !KINDS.includes(kind)) throw new Error(`kind 必须是 ${KINDS.join(' / ')}`);
+  if (status && !STATUSES.includes(status)) throw new Error(`status 必须是 ${STATUSES.join(' / ')}`);
+  if (!Number.isSafeInteger(limit) || limit < 1 || !Number.isSafeInteger(offset) || offset < 0) throw new Error('limit 必须为正整数，offset 必须为非负整数');
   const needle = query.trim().toLowerCase();
   const matches = entries.filter(entry => (!kind || entry.kind === kind) && (!status || entry.status === status)
-    && (!needle || [entry.term, entry.meaning, entry.avoid, entry.note, entry.link_note ?? "", ...entry.links.map(link => link.word)].some(value => value.toLowerCase().includes(needle))));
+    && (!needle || [entry.term, entry.meaning, entry.avoid, entry.note, entry.link_note ?? '', ...entry.links.map(link => link.word)].some(value => value.toLowerCase().includes(needle))));
   return { count: entries.length, total: matches.length, offset, limit,
     records: needle || kind || status ? matches.slice(offset, offset + limit) : [] };
 }
 
-export function run(args, entries = glossaryEntries) {
-  if (args.includes("--help")) {
-    if (args.length !== 1) throw new Error("--help 须单独使用");
-    return HELP;
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
+const AUDIT_CONTEXT = 10;
+
+// Markdown page sources as Eleventy reads them: skips AGENTS/CLAUDE, materials-* and _-prefixed files or folders.
+function pageSources(dir) {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap(item => {
+    if (item.name.startsWith('_') || item.name.startsWith('.')) return [];
+    const file = path.join(dir, item.name);
+    if (item.isDirectory()) return pageSources(file);
+    return item.name.endsWith('.md') && !/^(AGENTS|CLAUDE)\.md$/.test(item.name) && !item.name.startsWith('materials-') ? [file] : [];
+  });
+}
+
+// Render every page body with the real link rule. Without a query, count blue words with examples;
+// with one, list each occurrence of that exact text in linkable body text and whether it is linked.
+export async function auditGlossary({ query = '', root = ROOT, entries = glossaryEntries, limit = 20, offset = 0 } = {}) {
+  if (!Number.isSafeInteger(limit) || limit < 1 || !Number.isSafeInteger(offset) || offset < 0) throw new Error('limit 必须为正整数，offset 必须为非负整数');
+  const [{ default: MarkdownIt }, { default: container }, { default: matter }, { articleContainers }] = await Promise.all([
+    import('markdown-it'), import('markdown-it-container'), import('gray-matter'), import('./article-prose.mjs')]);
+  // Same options as the site; titles of the remaining ::: containers are markup, not body text.
+  const md = new MarkdownIt({ html: true, breaks: true }).use(articleContainers)
+    .use(container, 'any', { validate: () => true }).use(glossaryLinks, { entries });
+  const pages = pageSources(path.join(root, 'src')).map(file => {
+    const runs = [];
+    md.render(matter(fs.readFileSync(file, 'utf8')).content, { glossaryAudit: runs });
+    return { file: path.relative(root, file).replaceAll('\\', '/'), runs };
+  });
+  const byId = new Map(entries.map(entry => [entry.id, entry]));
+  const around = (value, from, to) => `${value.slice(Math.max(0, from - AUDIT_CONTEXT), from)}【${value.slice(from, to)}】${value.slice(to, to + AUDIT_CONTEXT)}`;
+  const page = records => ({ total: records.length, offset, limit, records: records.slice(offset, offset + limit) });
+  if (!query) {
+    const words = new Map();
+    for (const { file, runs } of pages) for (const { value, hits } of runs) for (const hit of hits) {
+      if (hit.repeat) continue;
+      const key = `${hit.id}\n${hit.text}`;
+      const { term, kind } = byId.get(hit.id);
+      const row = words.get(key) ?? { text: hit.text, term, kind, count: 0, examples: [] };
+      row.count++;
+      if (row.examples.length < 3) row.examples.push(`${file}：${around(value, hit.index, hit.index + hit.text.length)}`);
+      words.set(key, row);
+    }
+    const records = [...words.values()].sort((a, b) => b.count - a.count || a.text.localeCompare(b.text));
+    return { files: pages.length, links: records.reduce((n, row) => n + row.count, 0), ...page(records) };
   }
-  if (args.includes("--check")) {
-    if (args.length !== 1) throw new Error("--check 不与其他参数混用");
-    return { valid: true, entries: entries.length, links: entries.reduce((n, entry) => n + entry.links.length, 0) };
+  const records = [];
+  for (const { file, runs } of pages) for (const { value, hits } of runs) {
+    for (let at = value.indexOf(query); at !== -1; at = value.indexOf(query, at + 1)) {
+      const hit = hits.find(h => h.index < at + query.length && at < h.index + h.text.length);
+      records.push({ file, context: around(value, at, at + query.length), status: hit ? (hit.repeat ? '重复不加蓝' : '蓝字') : '未标',
+        ...(hit && { text: hit.text, term: byId.get(hit.id).term }) });
+    }
   }
-  const options = {}, query = [];
+  return { files: pages.length, query, linked: records.filter(r => r.status === '蓝字').length, ...page(records) };
+}
+
+function parseArgs(args, valued) {
+  const options = {}, words = [];
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    if (["--kind", "--status", "--limit", "--offset"].includes(arg)) {
+    if (valued.includes(arg)) {
       const value = args[++i];
-      if (value === undefined || value.startsWith("--")) throw new Error(`${arg} 缺少值`);
-      options[arg.slice(2)] = ["--limit", "--offset"].includes(arg) ? Number(value) : value;
-    } else if (arg.startsWith("--")) throw new Error(`未知选项：${arg}`);
-    else query.push(arg);
+      if (value === undefined || value.startsWith('--')) throw new Error(`${arg} 缺少值`);
+      options[arg.slice(2)] = ['--limit', '--offset'].includes(arg) ? Number(value) : value;
+    } else if (arg.startsWith('--')) throw new Error(`未知选项：${arg}`);
+    else words.push(arg);
   }
-  return queryGlossary(entries, { ...options, query: query.join(" ") });
+  return { ...options, query: words.join(' ') };
+}
+
+// Returns a Promise only for --audit.
+export function run(args, entries = glossaryEntries) {
+  if (args.includes('--help')) {
+    if (args.length !== 1) throw new Error('--help 须单独使用');
+    return HELP;
+  }
+  if (args.includes('--check')) {
+    if (args.length !== 1) throw new Error('--check 不与其他参数混用');
+    return { valid: true, entries: entries.length, links: entries.reduce((n, entry) => n + entry.links.length, 0) };
+  }
+  if (args.includes('--audit')) {
+    const rest = args.filter(arg => arg !== '--audit');
+    if (rest.length !== args.length - 1) throw new Error('--audit 只能写一次');
+    return auditGlossary({ ...parseArgs(rest, ['--limit', '--offset']), entries });
+  }
+  return queryGlossary(entries, parseArgs(args, ['--kind', '--status', '--limit', '--offset']));
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    const result = run(process.argv.slice(2));
-    console.log(typeof result === "string" ? result : JSON.stringify(result, null, 2));
+    const result = await run(process.argv.slice(2));
+    console.log(typeof result === 'string' ? result : JSON.stringify(result, null, 2));
   }
   catch (error) { console.error(error.message); process.exitCode = 1; }
 }

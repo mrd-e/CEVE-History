@@ -93,6 +93,7 @@ kb/                         私有资料库克隆（不进公开仓库）
 | `npm run finish -- person:短名` | 依次跑差异空白、check、build 及本人两项 `verify`，通过只报一行，首个失败打印末尾输出后停止 |
 | `npm run review -- --help` | 按功能筛复查候选、读对象卡片和段落、查变更影响；无参数只报数量 |
 | `npm run glossary -- "词语"` | 按词查询术语 JSON；可筛类别、确认状态 |
+| `npm run glossary -- --audit "文字"` | 按网站蓝字规则渲染全站正文，列出这串文字每处上下文及是否加蓝；不带文字时按蓝字统计 |
 | `npm run research:query -- <TSV路径> --where 列=值` | 分页读取调查表，不倾倒全表 |
 | `npm run fetch` | 校验并抓缺失数据 |
 | `npm run check` | 只校验，不联网 |

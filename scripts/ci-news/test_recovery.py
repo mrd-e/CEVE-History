@@ -220,10 +220,10 @@ class RecoveryTests(unittest.TestCase):
                     raise subprocess.CalledProcessError(1, args)
             with patch.object(sync, "NEWS", root), patch.object(sync, "STATE", state_file), \
                     patch.object(sync, "prepare_page", return_value=("# 稿件", "site", {})), \
-                    patch.object(sync, "run", side_effect=command), patch.object(sync, "git_save") as save:
+                    patch.object(sync, "run", side_effect=command), patch.object(sync, "save") as save:
                 with self.assertRaises(SystemExit):
                     sync.publish()
-                save.assert_not_called()
+                save.assert_called_once_with([], "天书：更新订阅待办")
             self.assertEqual(page.read_text("utf-8"), "原稿")
             self.assertEqual(state_file.read_bytes(), original)
 
@@ -238,34 +238,69 @@ class RecoveryTests(unittest.TestCase):
                 page.write_text("并行人工修改", "utf-8")
                 raise ValueError("翻译失败")
             with patch.object(sync, "STATE", state_file), patch.object(sync, "NEWS", root), \
-                    patch.object(sync, "prepare_page", side_effect=prepare), patch.object(sync, "git_save"):
+                    patch.object(sync, "prepare_page", side_effect=prepare), patch.object(sync, "save"):
                 sync.write_state({"pending": [SLUG], "sections": {}})
                 with self.assertRaises(SystemExit):
                     sync.publish()
                 self.assertEqual(sync.read_state()["parallel"], 1)
                 self.assertEqual(page.read_text("utf-8"), "并行人工修改")
 
-    def test_push_retry_and_commit_are_limited_to_requested_paths(self):
+    def test_commit_is_limited_to_requested_paths_and_does_not_push(self):
         for changed in (0, 1):
             with self.subTest(changed=changed), patch.object(sync, "run") as run, \
                     patch.object(sync.subprocess, "run", return_value=subprocess.CompletedProcess([], changed)):
-                sync.git_save(["state.json"], "测试")
-                self.assertEqual(run.call_args.args[0], ["git", "push", "origin", "HEAD:main"])
+                self.assertEqual(sync.commit(["state.json"], "测试"), bool(changed))
+                self.assertNotIn("push", [c.args[0][1] for c in run.call_args_list])
                 commits = [c.args[0] for c in run.call_args_list if c.args[0][1] == "commit"]
                 self.assertEqual(len(commits), changed)
                 if commits:
                     self.assertEqual(commits[0], ["git", "commit", "--only", "-m", "测试", "--", "state.json"])
+
+    def test_one_run_saves_every_finished_article_in_one_commit_even_after_a_crash(self):
+        def prepare(slug, state, page):
+            if slug == "crash":
+                raise KeyError("意外错误")
+            return "# 稿件", "site", {}
+        for pending in (["one", "two"], ["one", "crash"]):
+            with self.subTest(pending=pending), tempfile.TemporaryDirectory() as tmp, \
+                    patch.dict(os.environ, EVE_TRANSLATOR_JOBS=str(Path(tmp) / "jobs")):
+                root = Path(tmp)
+                (root / "calendar.json").write_text('{"entries": []}\n', "utf-8")
+                def command(args, **kwargs):
+                    if args[2] == "add":
+                        slug = args[3].rstrip("/").rsplit("/", 1)[-1]
+                        (root / f"{slug}.md").write_text("新页面", "utf-8")
+                        state = sync.read_state()
+                        state["pending"].remove(slug)
+                        sync.write_state(state)
+                with patch.object(sync, "NEWS", root), patch.object(sync, "STATE", root / "state.json"), \
+                        patch.object(sync, "prepare_page", side_effect=prepare), \
+                        patch.object(sync, "run", side_effect=command), \
+                        patch.object(sync, "register_deals", return_value=False), \
+                        patch.object(sync, "save") as save:
+                    sync.write_state({"pending": pending, "sections": {}, "deploy": False})
+                    if "crash" in pending:
+                        with self.assertRaises(KeyError):
+                            sync.publish()
+                        save.assert_called_once_with([root / "one.md"], "天书：收录 one")
+                        self.assertEqual(sync.read_state()["pending"], ["crash"])
+                        self.assertFalse((root / "crash.md").exists())
+                    else:
+                        sync.publish()
+                        save.assert_called_once_with([root / "one.md", root / "two.md"], "天书：收录 one、two")
+                    self.assertTrue(sync.read_state()["deploy"])
 
     def test_global_quota_stops_remaining_articles_and_saves_retry(self):
         with tempfile.TemporaryDirectory() as tmp:
             state_file = Path(tmp) / "state.json"
             with patch.object(sync, "STATE", state_file), patch.object(sync, "NEWS", Path(tmp)), \
                     patch.object(sync, "prepare_page", side_effect=sync.ClaudeUnavailable("quota")) as prepare, \
-                    patch.object(runtime, "cooling", return_value="2099-01-01T00:00:00Z"), patch.object(sync, "git_save"):
+                    patch.object(runtime, "cooling", return_value="2099-01-01T00:00:00Z"), patch.object(sync, "save") as save:
                 sync.write_state({"pending": ["one", "two"], "sections": {}, "deploy": False})
                 with self.assertRaises(SystemExit):
                     sync.publish()
                 self.assertEqual(prepare.call_count, 1)
+                save.assert_called_once_with([], "天书：等待订阅额度恢复")
                 self.assertEqual(sync.read_state()["pending"], ["one", "two"])
                 self.assertIn("modelRetryAfter", sync.read_state())
 
@@ -295,11 +330,11 @@ class RecoveryTests(unittest.TestCase):
                         patch.object(sync, "run", side_effect=command), \
                         patch.object(sync, "register_deals", side_effect=deals), \
                         patch.object(runtime, "cooling", return_value="2099-01-01T00:00:00Z" if label == "quota" else None), \
-                        patch.object(sync, "git_save") as save:
+                        patch.object(sync, "save") as save:
                     sync.write_state({"pending": [slug], "sections": {}, "deploy": False})
                     if label == "written":
                         sync.publish()
-                        self.assertEqual(save.call_args.args, ([state_file, page, calendar], f"天书：收录 {slug}"))
+                        self.assertEqual(save.call_args.args, ([page, calendar], f"天书：收录 {slug}"))
                         self.assertTrue(sync.read_state()["deploy"])
                         continue
                     with self.assertRaises(SystemExit):
@@ -309,9 +344,9 @@ class RecoveryTests(unittest.TestCase):
                     self.assertEqual(sync.read_state()["pending"], [slug])
                     if label == "quota":
                         self.assertIn("modelRetryAfter", sync.read_state())
-                        self.assertEqual(save.call_args.args[0], [state_file])
+                        save.assert_called_once_with([], "天书：等待订阅额度恢复")
                     else:
-                        save.assert_not_called()
+                        save.assert_called_once_with([], "天书：更新订阅待办")
 
     def test_deals_judgment_retries_once_then_reuses_checkpoint(self):
         url = sync.ccp.page_url("winter-sale")

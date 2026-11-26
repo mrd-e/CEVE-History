@@ -7,7 +7,14 @@
     "alliance-tournament-xxii-wrap-up",
     "up-to-25-off-omega-expansion-deals",
     "the-fractured-skies-expansion-is-here",
-    "monthly-economic-report-october-2026"
+    "monthly-economic-report-october-2026",
+    "heres-your-csm-21",
+    "breaking-news-imminent-attack",
+    "atxxii-finals-begin-this-weekend",
+    "crimson-harvest-sale-in-the-nes",
+    "csm-21-cast-your-vote-now",
+    "community-beat-for-23-october",
+    "monthly-ban-report-september-2026"
   ],
   "feed": [
     "patch-notes-version-24-02",
@@ -81,6 +88,6 @@
       }
     }
   },
-  "deploy": false,
+  "deploy": true,
   "patchPublishedAt": "2026-11-26T11:00:17.672Z"
 }

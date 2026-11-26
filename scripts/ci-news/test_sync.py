@@ -115,21 +115,23 @@ class NewsSyncTests(unittest.TestCase):
         state = sync.discover(state, ["b", "old"], "v2", "two")
         self.assertEqual(state["pending"], ["a", "b", "v1", "v2"])
 
-    def test_scan_without_changes_does_not_write_or_commit(self):
+    def test_scan_only_writes_changed_state_and_never_commits(self):
         slug = "patch-notes-version-24-02"
         feed = f"<rss><channel><item><link>{sync.ccp.page_url(slug)}</link></item></channel></rss>"
         news = f'<a href="/news/view/{slug}"><strong>Patch Notes</strong></a>'
         state = sync.discover(None, [slug], slug, sync.digest("补丁正文"))
         state["patchPublishedAt"] = "2026-11-20T11:00:10Z"
-        with (patch.object(sync.ccp, "fetch", side_effect=[feed.encode(), news.encode()]),
-              patch.object(sync, "article", return_value={"markdown": "补丁正文", "updated": state["patchPublishedAt"]}),
-              patch.object(sync, "read_state", return_value=state),
-              patch.object(sync, "write_state") as write,
-              patch.object(sync, "git_save") as save,
-              redirect_stdout(StringIO())):
-            sync.scan()
-        write.assert_not_called()
-        save.assert_not_called()
+        for updated, written in ((state["patchPublishedAt"], False), ("2026-11-26T11:00:10Z", True)):
+            with (self.subTest(written=written),
+                  patch.object(sync.ccp, "fetch", side_effect=[feed.encode(), news.encode()]),
+                  patch.object(sync, "article", return_value={"markdown": "补丁正文", "updated": updated}),
+                  patch.object(sync, "read_state", return_value=state),
+                  patch.object(sync, "write_state") as write,
+                  patch.object(sync, "run") as run,
+                  redirect_stdout(StringIO())):
+                sync.scan()
+            self.assertEqual(write.called, written)
+            run.assert_not_called()
 
     def test_publish_requests_deploy_only_for_changed_page(self):
         slug = "patch-notes-version-24-02"
@@ -154,39 +156,61 @@ class NewsSyncTests(unittest.TestCase):
                       patch.object(sync, "STATE", root / "state.json"),
                       patch.object(sync, "prepare_page", return_value=("# 标题", "site", {})),
                       patch.object(sync, "run", side_effect=run),
-                      patch.object(sync, "git_save") as save):
+                      patch.object(sync, "save") as save):
                     sync.write_state(state)
                     sync.publish()
                     saved = sync.read_state()
                     self.assertEqual(saved["pending"], [])
                     self.assertEqual(saved["deploy"], before != after)
+                    save.assert_called_once()
                     self.assertEqual(page in save.call_args.args[0], before != after)
 
-    def test_deploy_without_request_does_not_run_commands(self):
-        with (patch.object(sync, "read_state", return_value={"deploy": False}),
-              patch.object(sync, "run") as run):
-            sync.deploy()
-        run.assert_not_called()
+    def test_save_makes_one_commit_and_requests_deploy_only_after_push(self):
+        gh = ["gh", "workflow", "run", "deploy.yml", "--ref", "main"]
+        for deploy, changed, dispatch_fails in ((False, 0, False), (False, 1, False), (True, 1, False), (True, 1, True)):
+            with (self.subTest(deploy=deploy, changed=changed, dispatch_fails=dispatch_fails),
+                  tempfile.TemporaryDirectory() as temp):
+                state_file, page = Path(temp) / "state.json", Path(temp) / "page.md"
+                calls = []
 
-    def test_failed_deploy_request_is_retried(self):
-        command = ["gh", "workflow", "run", "deploy.yml", "--ref", "main"]
-        with tempfile.TemporaryDirectory() as temp:
-            with (patch.object(sync, "STATE", Path(temp) / "state.json"),
-                  patch.object(sync, "run") as run,
-                  patch.object(sync, "git_save") as save):
-                sync.write_state({"deploy": True})
-                result = run.return_value
-                result.stdout = "same revision"
-                run.side_effect = [result, result, result, CalledProcessError(1, command)]
-                with self.assertRaises(CalledProcessError):
-                    sync.deploy()
-                self.assertTrue(sync.read_state()["deploy"])
-                save.assert_not_called()
-                run.side_effect = None
-                sync.deploy()
-                self.assertFalse(sync.read_state()["deploy"])
-                run.assert_called_with(command, cwd=sync.ROOT)
-                save.assert_called_once()
+                def command(args, **kwargs):
+                    calls.append(args)
+                    if args == gh and dispatch_fails:
+                        raise CalledProcessError(1, gh)
+
+                with (patch.object(sync, "STATE", state_file), patch.object(sync, "run", side_effect=command),
+                      patch.object(sync.subprocess, "run", return_value=sync.subprocess.CompletedProcess([], changed))):
+                    sync.write_state({"deploy": deploy})
+                    if dispatch_fails:
+                        with self.assertRaises(CalledProcessError):
+                            sync.save([page], "天书：收录 a")
+                    else:
+                        sync.save([page], "天书：收录 a")
+                steps = [args[1] for args in calls]
+                commits = [args for args in calls if args[1] == "commit"]
+                saved = json.loads(state_file.read_text("utf-8"))
+                if changed:
+                    self.assertEqual(commits[0], ["git", "commit", "--only", "-m", "天书：收录 a", "--",
+                                                  str(state_file), str(page)])
+                if not deploy:
+                    self.assertEqual(steps, ["add", "commit", "push"] if changed else ["add"])
+                    self.assertFalse(saved["deploy"])
+                elif not dispatch_fails:
+                    self.assertEqual(steps, ["add", "commit", "push", "workflow"])
+                    self.assertFalse(saved["deploy"])
+                else:
+                    # 请求失败才补一个待重试提交，Worker 下个整点再试。
+                    self.assertEqual(steps, ["add", "commit", "push", "workflow", "add", "commit", "push"])
+                    self.assertEqual(commits[1][4], "天书：站点部署待重试")
+                    self.assertTrue(saved["deploy"])
+
+    def test_finish_commits_scan_or_retries_deploy_without_publishing(self):
+        for scanned, message in (("M state.json\n", "天书：更新订阅待办"), ("", "天书：已请求站点部署")):
+            with self.subTest(scanned=bool(scanned)), patch.object(sync, "save") as save, \
+                    patch.object(sync, "run") as run:
+                run.return_value.stdout = scanned
+                sync.finish()
+            save.assert_called_once_with([], message)
 
     def test_source_links(self):
         rss = "<rss><channel><item><link>{}</link></item></channel></rss>"

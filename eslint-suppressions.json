@@ -83,14 +83,6 @@
       "count": 19
     }
   },
-  "scripts/glossary.mjs": {
-    "@stylistic/arrow-parens": {
-      "count": 1
-    },
-    "@stylistic/quotes": {
-      "count": 70
-    }
-  },
   "scripts/make-fonts.mjs": {
     "@stylistic/arrow-parens": {
       "count": 8

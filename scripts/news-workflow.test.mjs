@@ -26,3 +26,15 @@ test('翻译回归进入 CI；任务成果在取消、失败和成功后都保�
   assert.match(upload, /if: always\(\)/);
   assert.match(news, /sync\.py restore/);
 });
+
+test('天书每轮只在收尾提交一次：收录开始后由收录提交，没走到收录时由收尾提交', () => {
+  const news = readFileSync(new URL('../.github/workflows/news.yml', import.meta.url), 'utf8');
+  const steps = news.split(/\n\s*- (?=name:|uses:|if:|run:)/);
+  const publish = steps.find(step => step.includes('sync.py publish'));
+  const finish = steps.find(step => step.includes('sync.py finish'));
+  assert.match(publish, /id: publish/);
+  assert.match(publish, /GH_TOKEN: \$\{\{ github\.token \}\}/);
+  assert.match(finish, /if: always\(\) && steps\.scan\.outcome == 'success' && steps\.publish\.outcome == 'skipped'/);
+  assert.match(finish, /GH_TOKEN: \$\{\{ github\.token \}\}/);
+  assert.doesNotMatch(news, /sync\.py deploy/);
+});

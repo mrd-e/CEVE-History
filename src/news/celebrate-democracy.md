@@ -30,7 +30,7 @@ translation: official
 - 400伊甸币
 - 标准“增益”大脑加速器
 - 250000技能点
-- 促进级海军型、毛鲁斯级海军型、纳美西斯级、布鲁提克斯级海军型、万王宝座级海军型和狂徒泛光升腾涂装
+- 促进级海军型、毛鲁斯级海军型、纳美西斯级、布鲁提克斯级海军型、万王宝座级海军型和狂徒级泛光升腾涂装
 
 ![Gallente Day Secure Pack](https://images.ctfassets.net/7lhcm73ukv5p/buO71iMPi7EvGOCctPOEx/2c5f69d36a0461656b069d79142ba5d1/Brutix-NavyIssue_1920x1080.jpg)
 ![Gallente Day Secure Pack](https://images.ctfassets.net/7lhcm73ukv5p/74z7w3GQotqHjRvMGxF8ma/9dc225ec287f8c90b8dbea5346a306fe/Catalyst-NavyIssue_1920x1080.jpg)

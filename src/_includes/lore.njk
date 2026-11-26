@@ -33,6 +33,8 @@ bodyClass: page-news page-lore
     <p class="news-credit" data-pagefind-ignore>原文与图片版权归 CCP Games 所有。本页由本站据英文原文翻译，以官方英文原文为准。</p>
   </article>
 
+  {% include "glossary-dialog.njk" %}
+
   <nav class="pager" aria-label="按发布时间翻页" data-pagefind-ignore>
     {% if prev %}<a class="pager-prev" href="{{ prev.url | url }}" rel="prev"><small>较新一篇</small>{{ prev.data.title }}</a>{% else %}<span></span>{% endif %}
     <a class="pager-random" href="{{ '/lore/' | url }}">目录</a>

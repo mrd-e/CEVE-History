@@ -489,7 +489,8 @@ def restore(path, before, written):
         path.write_bytes(before)
 
 
-def git_save(paths, message):
+def commit(paths, message):
+    """只暂存并提交列出的路径，返回是否产生提交。"""
     paths = [str(path) for path in paths]
     run(["git", "add", "--", *paths], cwd=ROOT)
     changed = subprocess.run(["git", "diff", "--cached", "--quiet", "--", *paths], cwd=ROOT).returncode
@@ -497,11 +498,34 @@ def git_save(paths, message):
         raise ValueError("无法检查收录暂存差异")
     if changed:
         run(["git", "commit", "--only", "-m", message, "--", *paths], cwd=ROOT)
-    # 上一次提交成功但 push 失败时，没有新差异仍要补推。
-    run(["git", "push", "origin", "HEAD:main"], cwd=ROOT)
+    return bool(changed)
+
+
+def save(paths, message):
+    """一轮运行只提交一次：订阅状态、页面、折扣清单与部署标记同一提交，推送后再请求部署。
+
+    部署请求失败时才另记一个待重试提交，由 Worker 整点重试。"""
+    state = read_state()
+    deploy = bool(state and state.get("deploy"))
+    if deploy:
+        state["deploy"] = False
+        write_state(state)
+    if commit([STATE, *paths], message):
+        run(["git", "push", "origin", "HEAD:main"], cwd=ROOT)
+    if not deploy:
+        return
+    try:
+        run(["gh", "workflow", "run", "deploy.yml", "--ref", "main"], cwd=ROOT)
+    except subprocess.CalledProcessError:
+        state["deploy"] = True
+        write_state(state)
+        commit([STATE], "天书：站点部署待重试")
+        run(["git", "push", "origin", "HEAD:main"], cwd=ROOT)
+        raise
 
 
 def scan():
+    """只在本地更新订阅状态；提交留给本轮收尾。"""
     feed = feed_slugs(ccp.fetch(f"{ccp.SITE}/rss"))
     patch = current_patch(ccp.fetch(f"{ccp.SITE}/news").decode())
     previous = read_state()
@@ -510,7 +534,6 @@ def scan():
     state["patchPublishedAt"] = current["updated"]
     if state != previous:
         write_state(state)
-        git_save([STATE], "天书：更新订阅待办")
     print(f"订阅 {len(feed)} 篇，当前 {patch}，待办 {len(state['pending'])} 篇")
 
 
@@ -549,95 +572,95 @@ def publish():
     retry = state.get("modelRetryAfter")
     if retry and runtime.future(retry):
         raise ClaudeUnavailable(f"订阅额度等待恢复：{retry}")
-    failed = []
-    for slug in state["pending"].copy():
-        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]*", slug):
-            raise ValueError("待办短名无效")
-        page = NEWS / f"{slug}.md"
-        calendar = NEWS / "calendar.json"
-        paths = [STATE]
-        if PATCH.fullmatch(slug) or not page.exists():
-            previous_page = page.read_bytes() if page.exists() else None
-            written_page = written_state = previous_state = previous_calendar = None
-            deals = False
+    failed, published, paths = [], [], []
+    cooled = False
+    try:
+        for slug in state["pending"].copy():
+            if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]*", slug):
+                raise ValueError("待办短名无效")
+            page = NEWS / f"{slug}.md"
+            calendar = NEWS / "calendar.json"
+            if PATCH.fullmatch(slug) or not page.exists():
+                previous_page = page.read_bytes() if page.exists() else None
+                written_page = written_state = previous_state = previous_calendar = None
+                deals = False
 
-            def roll_back():
-                restore(page, previous_page, written_page)
-                restore(STATE, previous_state, written_state)
-                if previous_calendar is not None:
-                    calendar.write_bytes(previous_calendar)
+                def roll_back():
+                    restore(page, previous_page, written_page)
+                    restore(STATE, previous_state, written_state)
+                    if previous_calendar is not None:
+                        calendar.write_bytes(previous_calendar)
 
-            try:
-                text, origin, hashes = prepare_page(slug, state, page)
-                draft = runtime.jobs_root(FRAMEWORK) / "publication.md"
-                draft.parent.mkdir(parents=True, exist_ok=True)
-                draft.write_text(text + "\n", "utf-8")
-                source_file = draft.parent / f"publication-{slug}-source.md"
-                fingerprints = draft.parent / "publication-fingerprints.json"
-                runtime.atomic_json(fingerprints, hashes)
-                options = ["--source-snapshot", str(source_file), "--fingerprints", str(fingerprints)] if PATCH.fullmatch(slug) else []
-                if (page.read_bytes() if page.exists() else None) != previous_page:
-                    raise ValueError("翻译期间页面已被其他操作修改；保留其修改，下次用已完成的翻译继续")
-                previous_state = STATE.read_bytes()
-                current_state = read_state()
-                if current_state.get("sections", {}).get(slug) != state.get("sections", {}).get(slug):
-                    raise ValueError("翻译期间本篇章节状态已变更；下次从最新状态继续")
-                run(["node", "scripts/news-workbench.mjs", "add", ccp.page_url(slug),
-                     "--translation", origin, "--file", str(draft), *options, "--force"], cwd=ROOT)
-                written_page, written_state = page.read_bytes(), STATE.read_bytes()
-                recorded = read_state()
-                if slug in recorded["pending"] or (PATCH.fullmatch(slug) and recorded["sections"].get(slug) != hashes):
-                    raise ValueError("页面写入未同步订阅状态，保留待办")
-                run(["node", "scripts/news-workbench.mjs", "check", "--slug", slug], cwd=ROOT)
-                # 折扣清单与页面同一提交；这一步失败时整篇回滚，留在待办下次重试。
-                if not PATCH.fullmatch(slug):
-                    previous_calendar = calendar.read_bytes()
-                    deals = register_deals(slug)
-            except ClaudeUnavailable as error:
-                print(f"{slug} 模型不可用，停止本轮后续调用：{error}", file=sys.stderr, flush=True)
-                roll_back()
-                retry = runtime.cooling(runtime.jobs_root(FRAMEWORK))
-                if retry:
-                    state = read_state()
-                    state["modelRetryAfter"] = retry
-                    write_state(state)
-                    git_save([STATE], "天书：等待订阅额度恢复")
-                failed.extend(s for s in state["pending"] if s not in failed)
-                break
-            except (ValueError, OSError, subprocess.CalledProcessError) as error:
-                roll_back()
-                print(f"{slug} 留待重试：{error}", file=sys.stderr)
-                failed.append(slug)
-                continue
-            state = read_state()
-            if page.read_bytes() != previous_page:
-                paths.append(page)
-                state["deploy"] = True
-            if deals:
-                paths.append(calendar)
-                state["deploy"] = True
-        else:
-            state = record(read_state(), slug, body="", changed=False)
-        state.pop("modelRetryAfter", None)
-        write_state(state)
-        git_save(paths, f"天书：收录 {slug}")
+                try:
+                    text, origin, hashes = prepare_page(slug, state, page)
+                    draft = runtime.jobs_root(FRAMEWORK) / "publication.md"
+                    draft.parent.mkdir(parents=True, exist_ok=True)
+                    draft.write_text(text + "\n", "utf-8")
+                    source_file = draft.parent / f"publication-{slug}-source.md"
+                    fingerprints = draft.parent / "publication-fingerprints.json"
+                    runtime.atomic_json(fingerprints, hashes)
+                    options = ["--source-snapshot", str(source_file), "--fingerprints", str(fingerprints)] if PATCH.fullmatch(slug) else []
+                    if (page.read_bytes() if page.exists() else None) != previous_page:
+                        raise ValueError("翻译期间页面已被其他操作修改；保留其修改，下次用已完成的翻译继续")
+                    previous_state = STATE.read_bytes()
+                    current_state = read_state()
+                    if current_state.get("sections", {}).get(slug) != state.get("sections", {}).get(slug):
+                        raise ValueError("翻译期间本篇章节状态已变更；下次从最新状态继续")
+                    run(["node", "scripts/news-workbench.mjs", "add", ccp.page_url(slug),
+                         "--translation", origin, "--file", str(draft), *options, "--force"], cwd=ROOT)
+                    written_page, written_state = page.read_bytes(), STATE.read_bytes()
+                    recorded = read_state()
+                    if slug in recorded["pending"] or (PATCH.fullmatch(slug) and recorded["sections"].get(slug) != hashes):
+                        raise ValueError("页面写入未同步订阅状态，保留待办")
+                    run(["node", "scripts/news-workbench.mjs", "check", "--slug", slug], cwd=ROOT)
+                    # 折扣清单与页面同一提交；这一步失败时整篇回滚，留在待办下次重试。
+                    if not PATCH.fullmatch(slug):
+                        previous_calendar = calendar.read_bytes()
+                        deals = register_deals(slug)
+                except ClaudeUnavailable as error:
+                    print(f"{slug} 模型不可用，停止本轮后续调用：{error}", file=sys.stderr, flush=True)
+                    roll_back()
+                    retry = runtime.cooling(runtime.jobs_root(FRAMEWORK))
+                    if retry:
+                        state = read_state()
+                        state["modelRetryAfter"] = retry
+                        write_state(state)
+                        cooled = True
+                    failed.extend(s for s in state["pending"] if s not in failed)
+                    break
+                except (ValueError, OSError, subprocess.CalledProcessError) as error:
+                    roll_back()
+                    print(f"{slug} 留待重试：{error}", file=sys.stderr)
+                    failed.append(slug)
+                    continue
+                except BaseException:
+                    roll_back()  # 非预期错误也撤回本篇，已完成的文章照常提交后再报错。
+                    raise
+                state = read_state()
+                if page.read_bytes() != previous_page:
+                    paths.append(page)
+                    published.append(slug)
+                    state["deploy"] = True
+                if deals:
+                    paths.append(calendar)
+                    state["deploy"] = True
+            else:
+                state = record(read_state(), slug, body="", changed=False)
+            state.pop("modelRetryAfter", None)
+            write_state(state)
+    finally:
+        # 成功的文章、失败留下的待办和额度恢复时间一起提交；单篇失败不妨碍其他文章上线。
+        message = (f"天书：收录 {'、'.join(published)}" if published
+                   else "天书：等待订阅额度恢复" if cooled else "天书：更新订阅待办")
+        save(list(dict.fromkeys(paths)), message)
     if failed:
         raise SystemExit("未完成：" + "、".join(failed))
 
 
-def deploy():
-    state = read_state()
-    if not state or not state["deploy"]:
-        return
-    # 确认部署标记已推送；发布调度中断时下一次接着请求。
-    run(["git", "fetch", "origin", "main"], cwd=ROOT)
-    if run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True).stdout != run(
-            ["git", "rev-parse", "origin/main"], cwd=ROOT, capture_output=True).stdout:
-        raise ValueError("远端分支已移动，下次从最新版本继续")
-    run(["gh", "workflow", "run", "deploy.yml", "--ref", "main"], cwd=ROOT)
-    state["deploy"] = False
-    write_state(state)
-    git_save([STATE], "天书：已请求站点部署")
+def finish():
+    """本轮没有待办时提交扫描结果，并补发上次失败的部署请求。"""
+    scanned = run(["git", "status", "--porcelain", "--", str(STATE)], cwd=ROOT, capture_output=True).stdout.strip()
+    save([], "天书：更新订阅待办" if scanned else "天书：已请求站点部署")
 
 
 def smoke():
@@ -646,7 +669,7 @@ def smoke():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    commands = {"scan": scan, "publish": publish, "deploy": deploy, "smoke": smoke,
+    commands = {"scan": scan, "publish": publish, "finish": finish, "smoke": smoke,
                 "restore": lambda: runtime.restore(runtime.jobs_root(FRAMEWORK), os.environ["GITHUB_REPOSITORY"])}
     parser.add_argument("command", choices=commands)
     command = parser.parse_args().command

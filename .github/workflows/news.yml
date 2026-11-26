@@ -37,7 +37,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
-      - name: 检查订阅并保存待办
+      - name: 检查订阅
         id: scan
         if: inputs.test_translation != true
         run: |
@@ -53,7 +53,6 @@ jobs:
           retry = state.get('modelRetryAfter')
           cooling = retry and datetime.fromisoformat(retry.replace('Z', '+00:00')) > datetime.now(timezone.utc)
           print(f"pending={0 if cooling else len(state['pending'])}")
-          print(f"deploy_pending={str(state['deploy']).lower()}")
           PY
       - name: 离线验证收录与恢复协议
         if: inputs.test_translation == true || (steps.scan.outcome == 'success' && steps.scan.outputs.pending != '0')
@@ -70,10 +69,12 @@ jobs:
           cache: npm
       - if: steps.scan.outcome == 'success' && steps.scan.outputs.pending != '0'
         run: npm ci
-      - name: 翻译、独立复核并推送成稿
+      - name: 翻译、独立复核，一次提交并请求部署
+        id: publish
         if: steps.scan.outcome == 'success' && steps.scan.outputs.pending != '0'
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: python scripts/ci-news/sync.py publish
       - name: 测试订阅与翻译复核
         if: inputs.test_translation == true
@@ -88,10 +89,10 @@ jobs:
           path: translator/jobs/
           retention-days: 14
           if-no-files-found: ignore
-      - name: 发布已推送的文章
-        if: >-
-          always() && steps.scan.outcome == 'success' &&
-          (steps.scan.outputs.pending != '0' || steps.scan.outputs.deploy_pending == 'true')
+      # 没走到收录时（无待办、额度冷却或前置步骤失败）由这里提交扫描结果并补发部署；
+      # 收录一旦开始，提交只由收录自己完成，避免把未提交页面的状态单独推上去。
+      - name: 未收录时保存订阅状态并补发部署
+        if: always() && steps.scan.outcome == 'success' && steps.publish.outcome == 'skipped'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python scripts/ci-news/sync.py deploy
+        run: python scripts/ci-news/sync.py finish

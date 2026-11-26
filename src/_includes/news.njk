@@ -40,6 +40,8 @@ bodyClass: page-news
     <p class="news-credit" data-pagefind-ignore>原文与图片版权归 CCP Games 所有。{% if translation == "official" %}本页转载自官网中文版。{% else %}本页由本站据英文原文翻译，以官网英文原文为准。{% endif %}</p>
   </article>
 
+  {% include "glossary-dialog.njk" %}
+
   <nav class="pager" aria-label="按发布时间翻页" data-pagefind-ignore>
     {% if prev %}<a class="pager-prev" href="{{ prev.url | url }}" rel="prev"><small>较新一卷</small>{{ prev.data.title }}</a>{% else %}<span></span>{% endif %}
     <a class="pager-random" href="{{ '/news/' | url }}">目录</a>
