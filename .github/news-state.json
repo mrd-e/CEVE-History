@@ -28,8 +28,8 @@
     "black-friday-deals"
   ],
   "feed": [
-    "black-friday-deals",
     "patch-notes-version-24-02",
+    "black-friday-deals",
     "military-campaigns-update",
     "community-beat-for-20-november",
     "monthly-ban-report-october-2026",
@@ -39,11 +39,16 @@
   ],
   "pending": [],
   "patch": "patch-notes-version-24-02",
-  "observed": "c28b1a9963694a5fd72334360a7c5eb0a80e57bd1f83f6ef356aa5ac357f0844",
+  "observed": "1563f14377d9679cf7504b5bbe0e21e5d4d3e5762f2427a078eecaeab27cd8d1",
   "sections": {
     "patch-notes-version-24-02": {
       "intro": {
-        "source": "5c3b3eba67f7562fa92e709e25324238c806583580c295f48cde98eabda275b7",
+        "source": "866b718d16967616a4ddf10e42bcb0f2d7ac9f31ccd30bf3555b685ef869cedb",
+        "zh": null,
+        "official": false
+      },
+      "2026-11-27.1": {
+        "source": "7877c729613636f490f559ac48bc54c2ae5abf3a75d1986a0a595e551e70288f",
         "zh": null,
         "official": false
       },
@@ -100,7 +105,7 @@
     }
   },
   "deploy": false,
-  "patchPublishedAt": "2026-11-26T11:00:17.672Z",
+  "patchPublishedAt": "2026-11-27T11:00:11.692Z",
   "lore": {
     "since": "2026-09-23",
     "seen": [

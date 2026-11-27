@@ -2,7 +2,7 @@
 title: 补丁说明——24.02版本
 titleEn: Patch Notes - Version 24.02
 source: 'https://www.eveonline.com/news/view/patch-notes-version-24-02'
-published: '2026-11-26'
+published: '2026-11-27'
 officialTags:
   - patch-notes
 cover: >-
@@ -10,16 +10,26 @@ cover: >-
 translation: site
 ---
 
-大家好：
+大家好，
 
-本页列出本次发布（24.02版本，即《破碎苍穹》）全部更新的补丁说明。欢迎大家到EVE Online论坛参与本次发布内容的玩家讨论：
+本页列出了本次版本（版本24.02，即《破碎苍穹》）中所有更新的更新说明。欢迎大家前往EVE Online论坛，参与本次版本内容的玩家讨论：
 
 - [**综合反馈**](https://forums.eveonline.com/t/version-24-02-fractured-skies-general-feedback/521857)
 - [**已知问题**](https://forums.eveonline.com/t/version-24-02-fractured-skies-known-issues/521801)
 
-**首次发布日期**：2026年11月10日 **最后更新**：2026年11月26日
+**首次发布日期**：2026年11月10日 **最后更新**：2026年11月27日
 
-🤝 - 表示该项改动源自玩家的反馈或建议。
+🤝 - 表示该改动源自玩家的反馈或建议。
+
+## **2026-11-27.1补丁说明**
+
+### 缺陷修复：
+
+### 技术方面：
+
+- 修复了在太空中加载物体时偶尔出现的问题。说来意外，这次的问题与星堡（POS）代码无关。
+
+---
 
 ## **2026-11-26.1补丁说明**
 
