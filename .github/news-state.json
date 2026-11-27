@@ -17,16 +17,18 @@
     "monthly-ban-report-september-2026"
   ],
   "feed": [
+    "black-friday-deals",
     "patch-notes-version-24-02",
     "military-campaigns-update",
     "community-beat-for-20-november",
     "monthly-ban-report-october-2026",
     "25-off-omega-free-black-friday-skins",
     "alliance-tournament-xxii-wrap-up",
-    "up-to-25-off-omega-expansion-deals",
-    "the-fractured-skies-expansion-is-here"
+    "up-to-25-off-omega-expansion-deals"
   ],
-  "pending": [],
+  "pending": [
+    "black-friday-deals"
+  ],
   "patch": "patch-notes-version-24-02",
   "observed": "c28b1a9963694a5fd72334360a7c5eb0a80e57bd1f83f6ef356aa5ac357f0844",
   "sections": {
