@@ -1,6 +1,10 @@
 const site = 'https://www.eveonline.com';
 const repository = 'mrd-e/CEVE-History';
 const workflow = `https://api.github.com/repos/${repository}/actions/workflows/news.yml`;
+const loreSite = 'https://universe.eveonline.com';
+// 与 scripts/news-lore.mjs 的 LORE_COLUMNS、scripts/ci-news/sync.py 同序，测试核对三处一致。
+const loreColumns = ['new-eden-news', 'interstellar-correspondents', 'chronicles', 'short-stories',
+  'scientific-articles', 'empires', 'factions', 'lore'];
 
 async function checked(url, options) {
   const response = await fetch(url, options);
@@ -29,6 +33,24 @@ async function patchChanged(state) {
   throw new Error('补丁页缺少英文版本时间');
 }
 
+// 正史栏目 RSS 的 pubDate 是最后修改时间；起点前首发的旧文由收录任务按原文发布日期排除。
+async function loreChanged(lore) {
+  if (!lore) return false;
+  for (const column of loreColumns) {
+    const rss = await (await checked(`${loreSite}/feed/${column}.rss`)).text();
+    const items = [...rss.matchAll(/<item\b[^>]*>([\s\S]*?)<\/item>/gi)];
+    if (!items.length) throw new Error(`正史 ${column} RSS 缺少条目`);
+    for (const [, item] of items) {
+      const key = item.match(/<link>\s*https:\/\/universe\.eveonline\.com\/([a-z0-9-]+\/[A-Za-z0-9][A-Za-z0-9-]*)\/?\s*<\/link>/i)?.[1];
+      const updated = Date.parse(item.match(/<pubDate>([^<]+)<\/pubDate>/i)?.[1]);
+      if (!key || Number.isNaN(updated)) throw new Error(`正史 ${column} RSS 条目格式异常`);
+      const day = new Date(updated).toISOString().slice(0, 10);
+      if (day >= lore.since && !lore.seen.includes(key) && !lore.pending.includes(key)) return true;
+    }
+  }
+  return false;
+}
+
 export default {
   async scheduled(event, env) {
     const stateResponse = await fetch(`https://raw.githubusercontent.com/${repository}/main/.github/news-state.json`);
@@ -45,7 +67,8 @@ export default {
       return slug;
     }).some(slug => !state?.feed.includes(slug) && !state?.baseline.includes(slug));
     const hourly = new Date(event.scheduledTime).getUTCMinutes() === 0;
-    if (state && !hasNewArticle && !(hourly && (state.pending.length || state.deploy || await patchChanged(state)))) return;
+    if (state && !hasNewArticle && !(hourly && (state.pending.length || state.lore?.pending.length || state.deploy ||
+      await patchChanged(state) || await loreChanged(state.lore)))) return;
 
     const headers = { Authorization: `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'ceve-history-news' };
     const runs = await (await checked(`${workflow}/runs?branch=main&per_page=5`, { headers })).json();

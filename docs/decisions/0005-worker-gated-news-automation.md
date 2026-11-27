@@ -2,7 +2,7 @@
 
 - 状态：已采纳
 - 日期：2026-11-25（UTC）
-- 范围：Cloudflare Worker、新闻工作流、订阅扫描、Pages 调度
+- 范围：Cloudflare Worker、新闻工作流、订阅扫描（天书与正史）、Pages 调度
 - 关联：[自动收录操作](../news-automation.md)、[翻译执行](0006-bounded-resumable-translation.md)、[收录状态](0007-news-publication-state.md)
 
 ## 背景
@@ -11,7 +11,8 @@
 
 ## 决策
 
-- Cloudflare Worker 负责轻量检测与触发，不调用模型、不翻译、不直接发布网站。每十分钟查 RSS；整点另查当前补丁版本与更新时间，并考虑待办和待部署请求。
+- Cloudflare Worker 负责轻量检测与触发，不调用模型、不翻译、不直接发布网站。每十分钟查 RSS；整点另查当前补丁版本与更新时间、正史站各栏目 RSS，并考虑待办和待部署请求。
+- 正史与天书共用 Worker、工作流、translator 写稿与独立复核和提交边界，订阅状态单独记在 `lore` 块（起点、已处理、待办）。栏目 RSS 的时间是最后修改时间，只作预筛；Actions 以原文发布日期判定是否在起点之后，页面已存在即视为完成。正史栏目读取失败不得阻挡天书收录。
 - 新闻 Actions 保持 `workflow_dispatch` 入口，由 Worker 或人工触发；不再增加另一套 GitHub 定时轮询或本机常驻轮询。
 - Worker 使用公开订阅状态判断是否需要唤起 Actions，调用前检查是否已有未完成的新闻运行；新闻工作流串行执行，不取消正在完成的译文任务。
 - Worker 的检测只是预筛，Actions 仍须以实际原文指纹核对变化。缓存或时间戳造成多触发时，重复运行也不能重复送译或部署。
@@ -25,5 +26,5 @@
 ## 验收
 
 - 实现入口：`.github/news-worker.mjs`、`.github/workflows/news.yml` 与 `scripts/ci-news/sync.py` 的扫描、收录与收尾提交（`scan`、`publish`、`finish`）。
-- 回归入口为 `scripts/news-worker.test.mjs`、`scripts/news-workflow.test.mjs` 与 Python 扫描测试。修改此流程时须验证无变化不调度、已有运行不重复调度、补丁独立检测、冷却和部署边界，以及 Actions 最终指纹判断；现有用例未覆盖的路径需补充验证。
+- 回归入口为 `scripts/news-worker.test.mjs`、`scripts/news-workflow.test.mjs` 与 Python 扫描测试。修改此流程时须验证无变化不调度、已有运行不重复调度、补丁独立检测、正史栏目发现与起点判定、冷却和部署边界，以及 Actions 最终指纹判断；现有用例未覆盖的路径需补充验证。正史栏目清单在 Worker、`scripts/ci-news/sync.py` 与 `scripts/news-lore.mjs` 三处同序，由测试核对。
 - 仓库代码、Cloudflare 已部署脚本和触发表达式分别验证；本地测试通过不能报告线上配置已生效。

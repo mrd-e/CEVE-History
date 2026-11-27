@@ -3118,7 +3118,8 @@
       "start": "2026-09-26",
       "end": "2026-10-04T23:59",
       "channel": "web",
-      "discount": "100/200/500/1,000 PLEX 等小额档位最高五二折（100 PLEX 2.60 美元），单价持平八折大包"
+      "discount": "100/200/500/1,000 PLEX 等小额档位最高五二折（100 PLEX 2.60 美元），单价持平八折大包",
+      "news": "get-your-skins-in-space-for-less-plex"
     },
     {
       "key": "2026-10-06-crimson-harvest-packs",
@@ -3132,7 +3133,8 @@
       "news": [
         "stand-out-and-save-for-crimson-harvest",
         "crimson-harvest-the-bloodgates-are-open",
-        "crimson-harvest-intensifies-2026"
+        "crimson-harvest-intensifies-2026",
+        "dont-miss-the-biggest-rewards-ch-2026"
       ]
     },
     {
@@ -3143,7 +3145,8 @@
       "start": "2026-10-13",
       "end": "2026-10-20",
       "channel": "game",
-      "bonus": "近一年游玩满 12 小时的账号可在新伊甸商城免费领 10 PLEX 与烟火"
+      "bonus": "近一年游玩满 12 小时的账号可在新伊甸商城免费领 10 PLEX 与烟火",
+      "news": "totality-day-gift-and-special-offers"
     },
     {
       "key": "2026-10-24-nes-alpha-injector-3for1",

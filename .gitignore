@@ -1,13 +1,25 @@
+# 依赖与构建产物
 node_modules/
-/translator/
 _site/
 .cache/
+__pycache__/
+*.py[co]
+
+# 本机工作目录与工具状态
+/translator/
+/openspec
+/scratch/
+.playwright-mcp/
+.claude/settings.local.json
+
+# 本机密钥
+.env
+.env.*
+
+# 日志与系统文件
 *.log
 .DS_Store
 Thumbs.db
-.playwright-mcp/
-/openspec
-/scratch/
 
 # 私有资料库克隆在 kb/，整个目录不进本库；清单见 scripts/workspace.mjs。
 /kb/

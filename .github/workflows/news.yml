@@ -7,6 +7,10 @@ on:
         description: '仅用一段样文测试订阅、翻译与独立复核'
         type: boolean
         default: false
+      requeue_parked:
+        description: '重新排队全部已搁置的待办（更换令牌或修好站外问题后勾选）'
+        type: boolean
+        default: false
 
 concurrency:
   group: news
@@ -40,6 +44,8 @@ jobs:
       - name: 检查订阅
         id: scan
         if: inputs.test_translation != true
+        env:
+          NEWS_REQUEUE_PARKED: ${{ inputs.requeue_parked }}
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -52,7 +58,8 @@ jobs:
           state = json.loads(Path(".github/news-state.json").read_text(encoding="utf-8"))
           retry = state.get('modelRetryAfter')
           cooling = retry and datetime.fromisoformat(retry.replace('Z', '+00:00')) > datetime.now(timezone.utc)
-          print(f"pending={0 if cooling else len(state['pending'])}")
+          pending = len(state['pending']) + len(state.get('lore', {}).get('pending', []))
+          print(f"pending={0 if cooling else pending}")
           PY
       - name: 离线验证收录与恢复协议
         if: inputs.test_translation == true || (steps.scan.outcome == 'success' && steps.scan.outputs.pending != '0')
@@ -69,6 +76,13 @@ jobs:
           cache: npm
       - if: steps.scan.outcome == 'success' && steps.scan.outputs.pending != '0'
         run: npm ci
+      # Ubuntu 24.04 默认不许未受限进程在新用户命名空间里拿权限，翻译代理的 bwrap 命令隔离会起不来。
+      - name: 允许代理容器建立命令隔离
+        if: steps.scan.outcome == 'success' && steps.scan.outputs.pending != '0'
+        run: |
+          if [ -e /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
       - name: 翻译、独立复核，一次提交并请求部署
         id: publish
         if: steps.scan.outcome == 'success' && steps.scan.outputs.pending != '0'

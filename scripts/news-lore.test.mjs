@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import matter from 'gray-matter';
-import { fetchLore, loreCards, loreDocument, loreFromHtml, loreHtmlMarkdown, parseLoreUrl, validateLore, ycDate, ycToPublished } from './news-lore.mjs';
+import {
+  fetchLore, loreCards, loreDocument, loreFromHtml, loreHtmlMarkdown, parseLoreUrl, UndatedLoreError, validateLore, ycDate,
+  ycToPublished,
+} from './news-lore.mjs';
 
 const SLUG = 'sample-lore';
 const SOURCE = `https://universe.eveonline.com/chronicles/${SLUG}`;
@@ -73,10 +76,10 @@ test('loreHtmlMarkdown：标题、强调、链接、图片、列表、嵌入视�
   assert.throws(() => loreHtmlMarkdown('<article><p><marquee>x</marquee></p></article>'), /marquee/);
 });
 
-const page = (category = 'cat1') => `<html><script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
+const page = (category = 'cat1', publicationDate = '2026-11-09T12:00:00.000Z') => `<html><script id="__NEXT_DATA__" type="application/json">${JSON.stringify({
   props: {
     initialState: {
-      article: { articles: { a1: { slug: SLUG, title: 'Sample Chronicle', publicationDate: '2026-11-09T12:00:00.000Z', category, heroImage: { url: '//images.ctfassets.net/h.jpg' } } } },
+      article: { articles: { a1: { slug: SLUG, title: 'Sample Chronicle', publicationDate, category, heroImage: { url: '//images.ctfassets.net/h.jpg' } } } },
       category: { cat1: { name: 'Chronicles', slug: 'chronicles' } },
     },
   },
@@ -92,6 +95,10 @@ test('loreFromHtml：从页面数据取元数据，从 <article> 取正文', () 
   assert.equal(body, 'Body text.');
   assert.throws(() => loreFromHtml(page(), 'https://universe.eveonline.com/chronicles/other'), /没有文章 other/);
   assert.throws(() => loreFromHtml('<html></html>', SOURCE), /__NEXT_DATA__/);
+});
+
+test('loreFromHtml：设定百科页没有发布日期时报专门的错误，供自动收录跳过', () => {
+  assert.throws(() => loreFromHtml(page('cat1', null), SOURCE), UndatedLoreError);
 });
 
 test('loreCards：lore 站文章取栏目，交叉列入的公告标官网新闻并换算 YC 日期，按日期倒序', () => {

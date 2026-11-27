@@ -12,7 +12,7 @@ import {
   CALENDAR_CHANNELS, CALENDAR_DEALS, dealReview, dealRules, loadCalendar, mergeDeals, missingCalendar, nearbyDeals,
   validateCalendar,
 } from './news-calendar.mjs';
-import { fetchLore, loreDocument, validateLore } from './news-lore.mjs';
+import { fetchLore, loreDocument, parseLoreUrl, UndatedLoreError, validateLore } from './news-lore.mjs';
 import { publishNews } from './news-publication.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -30,7 +30,7 @@ const HELP = `用法：npm run news -- <命令>
   import <目录> --registry <登记.jsonl> [--force]
       批量导入官方中文 Markdown：登记表每行含 local_path 与 url（中文页链接），按文件名匹配。
   lore <universe.eveonline.com 链接> --out <草稿.md>
-      抓取正史英文原文，写出待译草稿（首行“# 英文标题”）。
+      抓取正史英文原文，写出待译草稿（首行“# 英文标题”）；页面没有发布日期时退出码 3，不写草稿。
   lore <universe.eveonline.com 链接> --file <中文.md> [--force]
       用译文（首行“# 中文标题”）写成 src/news/lore/<短名>.md，元数据取自原文；translation: site。
   check [--slug <短名>]
@@ -173,7 +173,15 @@ function cmdRecord(args) {
 async function cmdLore(args) {
   const url = args._[1] ?? '';
   if (!args.out === !args.file) throw new Error('lore 需要 --out <草稿.md>（抓取英文稿）或 --file <中文.md>（写成页面），二选一');
-  const { meta, slug, body } = await fetchLore(url);
+  let lore;
+  try {
+    lore = await fetchLore(url);
+  } catch (error) {
+    if (!args.out || !(error instanceof UndatedLoreError)) throw error;
+    console.log(JSON.stringify({ slug: parseLoreUrl(url).slug, status: 'undated' }));
+    return 3;
+  }
+  const { meta, slug, body } = lore;
   if (args.out) {
     writeFileSync(args.out, `# ${meta.titleEn}\n\n${body}\n`, 'utf8');
     console.log(JSON.stringify({ slug, status: 'draft', file: args.out, meta }));

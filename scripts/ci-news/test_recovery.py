@@ -15,6 +15,7 @@ import publication
 import runtime
 import sync
 
+os.environ.pop("CLAUDE_CODE_OAUTH_TOKEN", None)  # 失败路径会请维修代理；离线测试不许真的调用模型
 SOURCE = "# Flight test\n\nThe flight test starts at 12:00 UTC.\n"
 PATCH_SOURCE = "# Version\n\nIntro\n\n## Patch Notes for 2026-11-25.1\n\nFixed"
 PATCH_BODY = "前言\n\n## **2026-11-25.1补丁说明**\n\n已修复"
@@ -225,7 +226,11 @@ class RecoveryTests(unittest.TestCase):
                     sync.publish()
                 save.assert_called_once_with([], "天书：更新订阅待办")
             self.assertEqual(page.read_text("utf-8"), "原稿")
-            self.assertEqual(state_file.read_bytes(), original)
+            # 订阅状态回到收录前，只多一条失败计次；待办仍在，下轮重试。
+            state = json.loads(state_file.read_text("utf-8"))
+            failure = state.pop("failures")[SLUG]
+            self.assertEqual(state, json.loads(original))
+            self.assertEqual((failure["queue"], failure["attempts"], failure["parked"]), ("news", 1, False))
 
     def test_failure_during_translation_does_not_undo_parallel_state_or_page_edits(self):
         with tempfile.TemporaryDirectory() as tmp:

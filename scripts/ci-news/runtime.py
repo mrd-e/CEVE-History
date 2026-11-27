@@ -52,6 +52,15 @@ def signature(framework):
     return digest.hexdigest()
 
 
+def environment(framework):
+    """兼容标识加上代理镜像和工作流：任一处改动都说明有人修过，搁置的待办可以重新排队。"""
+    digest = hashlib.sha256(signature(framework).encode())
+    for path in (Path(__file__).parent / "Dockerfile", Path(__file__).parents[2] / ".github/workflows/news.yml"):
+        if path.exists():
+            digest.update(path.read_bytes())
+    return digest.hexdigest()
+
+
 @contextmanager
 def stage(label, job):
     started = monotonic()

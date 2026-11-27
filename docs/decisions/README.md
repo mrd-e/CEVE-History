@@ -10,12 +10,13 @@
 | [0002](0002-static-site-and-private-kb.md) | 已采纳 | 公开静态站、私有资料库和翻译框架分离 | 构建、kb 路径、公开派生数据 |
 | [0003](0003-official-sections-and-deals.md) | 已采纳 | 天书、正史、折扣平级，折扣清单独立维护 | 导航、集合、网址、历年优惠对照 |
 | [0004](0004-shared-navigation-and-reading.md) | 已采纳 | 导航与长文能力共用，返回直达指定目录 | 共享组件、基础交互、阅读样式 |
-| [0005](0005-worker-gated-news-automation.md) | 已采纳 | Worker 检测变化，Actions 按需收录与部署 | RSS、补丁检测、无变化退出、冷却 |
+| [0005](0005-worker-gated-news-automation.md) | 已采纳 | Worker 检测变化，Actions 按需收录与部署 | RSS、补丁检测、正史栏目订阅、无变化退出、冷却 |
 | [0006](0006-bounded-resumable-translation.md) | 已采纳 | 翻译最多两轮复核，按持久化阶段恢复 | Opus high、任务复用、附件与保留意见 |
 | [0007](0007-news-publication-state.md) | 已采纳 | 页面与订阅状态共同落盘，补丁按真实快照增量更新 | 人工收录、待办、章节指纹、失败恢复 |
 | [0008](0008-concurrent-git-writers.md) | 已采纳 | 多仓库与自动化共写时保留工作区和远端成果 | 提交授权、机器人提交、历史改写 |
 | [0009](0009-facts-judgment-and-review-boundaries.md) | 已采纳 | 事实快照、人工判断与功能复审分别维护 | 当前／历史归属、雷达与阵营、复审指纹 |
 | [0010](0010-news-deals-registration.md) | 已采纳 | 收录天书时判断折扣增补，与页面同一提交 | 自动收录、折扣清单、失败回滚 |
+| [0011](0011-self-repairing-news-failures.md) | 已采纳 | 收录失败计次封顶，维修代理可直接修复收录脚本 | 失败计次、维修代理、搁置与重新排队、命令隔离自检 |
 
 ## 当前结构与读取入口
 
@@ -25,7 +26,7 @@
 | 官方板块、网址或折扣功能 | 0003、0004、0010 | `src/_data/sections.js`、`scripts/news-lore.mjs`、`scripts/news-calendar.mjs` |
 | 返回、目录或长文交互 | 0004 | `src/_includes/back.njk`、`scripts/article-prose.mjs`、`src/assets/js/article-ui.js` |
 | 定时检测、工作流或部署触发 | 0005、0008 | `.github/news-worker.mjs`、`.github/workflows/news.yml`、`.github/workflows/deploy.yml` |
-| 翻译版本、模型、复核或重试 | 0001、0006 | `scripts/ci-news/sync.py`、`scripts/ci-news/runtime.py`、独立 `translator/` |
+| 翻译版本、模型、复核或重试 | 0001、0006、0011 | `scripts/ci-news/sync.py`、`scripts/ci-news/runtime.py`、独立 `translator/` |
 | 收录、补丁更新或订阅状态 | 0007、0008、0010 | `scripts/news-workbench.mjs`、`scripts/news-publication.mjs`、`scripts/ci-news/publication.py` |
 | 身份、快照、评分或复审失效 | 0009 | `scripts/person-identity.mjs`、`scripts/activity.mjs`、`scripts/review.mjs` |
 

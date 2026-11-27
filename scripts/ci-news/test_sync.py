@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 import sys
 import tempfile
 import unittest
@@ -12,6 +13,15 @@ from subprocess import CalledProcessError
 from unittest.mock import patch
 
 import sync
+
+os.environ.pop("CLAUDE_CODE_OAUTH_TOKEN", None)  # 失败路径会请维修代理；离线测试不许真的调用模型
+LORE_SINCE = "2026-09-23"
+OLD_LORE = (("empires/old", "Sat, 13 Nov 2021 17:44:17 GMT"),)
+
+
+def lore_rss(*items):
+    rows = "".join(f"<item><link>{sync.LORE_SITE}/{key}</link><pubDate>{date}</pubDate></item>" for key, date in items)
+    return f"<rss><channel>{rows}</channel></rss>".encode()
 
 
 class NewsSyncTests(unittest.TestCase):
@@ -115,23 +125,165 @@ class NewsSyncTests(unittest.TestCase):
         state = sync.discover(state, ["b", "old"], "v2", "two")
         self.assertEqual(state["pending"], ["a", "b", "v1", "v2"])
 
-    def test_scan_only_writes_changed_state_and_never_commits(self):
+    def scan(self, updated="2026-11-20T11:00:10Z", lore=lambda column: lore_rss(*OLD_LORE)):
+        """假订阅跑一轮扫描，返回 (写入的状态或 None, 错误输出)。lore 按栏目给出 RSS 或抛错。"""
         slug = "patch-notes-version-24-02"
-        feed = f"<rss><channel><item><link>{sync.ccp.page_url(slug)}</link></item></channel></rss>"
-        news = f'<a href="/news/view/{slug}"><strong>Patch Notes</strong></a>'
+        pages = {f"{sync.ccp.SITE}/rss": f"<rss><channel><item><link>{sync.ccp.page_url(slug)}</link></item></channel></rss>",
+                 f"{sync.ccp.SITE}/news": f'<a href="/news/view/{slug}"><strong>Patch Notes</strong></a>'}
         state = sync.discover(None, [slug], slug, sync.digest("补丁正文"))
-        state["patchPublishedAt"] = "2026-11-20T11:00:10Z"
-        for updated, written in ((state["patchPublishedAt"], False), ("2026-11-26T11:00:10Z", True)):
-            with (self.subTest(written=written),
-                  patch.object(sync.ccp, "fetch", side_effect=[feed.encode(), news.encode()]),
-                  patch.object(sync, "article", return_value={"markdown": "补丁正文", "updated": updated}),
-                  patch.object(sync, "read_state", return_value=state),
-                  patch.object(sync, "write_state") as write,
-                  patch.object(sync, "run") as run,
-                  redirect_stdout(StringIO())):
-                sync.scan()
-            self.assertEqual(write.called, written)
-            run.assert_not_called()
+        state.update(patchPublishedAt="2026-11-20T11:00:10Z", lore={"since": LORE_SINCE, "seen": [], "pending": []})
+
+        def fetch(url):
+            if url in pages:
+                return pages[url].encode()
+            column = re.fullmatch(rf"{re.escape(sync.LORE_SITE)}/feed/([a-z-]+)\.rss", url)
+            self.assertIsNotNone(column, url)
+            return lore(column[1])
+
+        errors = StringIO()
+        with (patch.object(sync.ccp, "fetch", side_effect=fetch),
+              patch.object(sync, "article", return_value={"markdown": "补丁正文", "updated": updated}),
+              patch.object(sync, "read_state", return_value=state),
+              patch.object(sync, "write_state") as write,
+              patch.object(sync, "run") as run,
+              redirect_stdout(StringIO()), redirect_stderr(errors)):
+            sync.scan()
+        run.assert_not_called()
+        return (write.call_args.args[0] if write.called else None), errors.getvalue()
+
+    def test_scan_only_writes_changed_state_and_never_commits(self):
+        self.assertIsNone(self.scan()[0])
+        self.assertEqual(self.scan(updated="2026-11-26T11:00:10Z")[0]["lore"]["pending"], [])
+        fresh = lore_rss(("chronicles/fresh", "Wed, 11 Nov 2026 08:25:04 GMT"), *OLD_LORE)
+        self.assertEqual(self.scan(lore=lambda column: fresh)[0]["lore"]["pending"], ["chronicles/fresh"])
+
+    def test_scan_skips_unreadable_lore_column_without_blocking_news(self):
+        def lore(column):
+            if column == "lore":
+                raise OSError("HTTP 503")
+            if column in ("empires", "factions"):
+                return b"<html>" if column == "empires" else lore_rss()
+            return lore_rss((f"{column}/fresh", "Wed, 11 Nov 2026 08:25:04 GMT"))
+
+        state, errors = self.scan(lore=lore)
+        expected = [f"{column}/fresh" for column in sync.LORE_COLUMNS if column not in ("empires", "factions", "lore")]
+        self.assertEqual(sorted(state["lore"]["pending"]), sorted(expected))
+        for column in ("empires", "factions", "lore"):
+            self.assertIn(f"正史 {column} 订阅本轮跳过", errors)
+
+    def test_lore_feed_dates_and_discovery(self):
+        items = sync.lore_feed(lore_rss(("chronicles/b", "Wed, 11 Nov 2026 08:25:04 GMT"),
+                                        ("chronicles/a", "Thu, 01 Oct 2026 01:00:00 +0800"), *OLD_LORE))
+        self.assertEqual(items, [("chronicles/b", "2026-11-11"), ("chronicles/a", "2026-09-30"), ("empires/old", "2021-11-13")])
+        for xml in (lore_rss(), lore_rss(("chronicles/a", "不是日期")),
+                    b"<rss><channel><item><link>https://example.org/chronicles/a</link>"
+                    b"<pubDate>Wed, 11 Nov 2026 08:25:04 GMT</pubDate></item></channel></rss>"):
+            with self.subTest(xml=xml), self.assertRaises(ValueError):
+                sync.lore_feed(xml)
+        self.assertEqual(sync.discover_lore(None, items, "2026-11-01"),
+                         {"since": "2026-11-01", "seen": [], "pending": ["chronicles/b"]})
+        lore = {"since": LORE_SINCE, "seen": ["chronicles/b"], "pending": ["lore/x"]}
+        self.assertEqual(sync.discover_lore(lore, items, "2026-11-27")["pending"], ["lore/x", "chronicles/a"])
+        self.assertEqual(lore["pending"], ["lore/x"])
+
+    def test_lore_columns_match_node_tools(self):
+        source = (sync.ROOT / "scripts/news-lore.mjs").read_text("utf-8")
+        block = re.search(r"export const LORE_COLUMNS = \[(.*?)\];", source, re.S)
+        self.assertEqual(tuple(re.findall(r"key: '([a-z-]+)'", block[1])), sync.LORE_COLUMNS)
+
+    def publish_lore(self, keys, translator, published, existing=()):
+        """假工作台与假翻译跑一轮只有正史待办的收录。
+        published 给出各短名的原文发布日期，缺席即无日期设定页。"""
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "lore").mkdir()
+            for slug in existing:
+                (root / "lore" / f"{slug}.md").write_text("人工页", "utf-8")
+            calls = []
+
+            def workbench(*args, accept=(0,)):
+                calls.append(args[2])
+                slug = args[1].rsplit("/", 1)[1]
+                if args[2] == "--out":
+                    self.assertEqual(accept, (0, 3))
+                    if slug not in published:
+                        return {"slug": slug, "status": "undated"}
+                    Path(args[3]).write_text(f"# {slug}\n\nBody", "utf-8")
+                    return {"slug": slug, "status": "draft", "meta": {"published": published[slug]}}
+                (root / "lore" / f"{slug}.md").write_text(Path(args[3]).read_text("utf-8"), "utf-8")
+                return {"slug": slug, "status": "written"}
+
+            with (patch.object(sync, "NEWS", root), patch.object(sync, "STATE", root / "state.json"),
+                  patch.dict(os.environ, EVE_TRANSLATOR_JOBS=str(root / "jobs")),
+                  patch.object(sync, "workbench", side_effect=workbench),
+                  patch.object(sync, "translate", side_effect=translator),
+                  patch.object(sync.runtime, "cooling", return_value="2026-11-27T15:00:00Z"),
+                  patch.object(sync, "save") as save, redirect_stdout(StringIO()), redirect_stderr(StringIO())):
+                sync.write_state({"pending": [], "deploy": False,
+                                  "lore": {"since": LORE_SINCE, "seen": ["chronicles/done"], "pending": keys}})
+                unfinished = None
+                try:
+                    sync.publish()
+                except SystemExit as error:
+                    unfinished = str(error)
+                paths, message = save.call_args.args
+                return {"state": sync.read_state(), "saved": [path.name for path in paths], "message": message,
+                        "calls": calls, "unfinished": unfinished, "pages": sorted(p.name for p in (root / "lore").iterdir())}
+
+    def test_publish_lore_translates_only_articles_first_published_after_start(self):
+        keys = ["chronicles/fresh", "chronicles/edited-old", "empires/undated", "lore/existing"]
+        sources = []
+
+        def translator(source, label):
+            sources.append((source, label))
+            return "# 新篇\n\n译文"
+
+        run = self.publish_lore(keys, translator, {"fresh": LORE_SINCE, "edited-old": "2019-05-01"}, existing=["existing"])
+        self.assertIsNone(run["unfinished"])
+        self.assertEqual(sources, [("# fresh\n\nBody", "fresh")])
+        self.assertEqual(run["state"]["lore"], {"since": LORE_SINCE, "seen": ["chronicles/done", *keys], "pending": []})
+        self.assertTrue(run["state"]["deploy"])
+        self.assertEqual((run["saved"], run["message"]), (["fresh.md"], "正史：收录 fresh"))
+        self.assertEqual(run["calls"], ["--out", "--file", "--out", "--out"])
+        self.assertEqual(run["pages"], ["existing.md", "fresh.md"])
+
+    def test_publish_lore_failure_keeps_pending(self):
+        dates = {"a": "2026-11-01", "b": "2026-11-02"}
+
+        def flaky(source, label):
+            if label == "a":
+                raise ValueError("复核未通过")
+            return "# 乙\n\n译文"
+
+        run = self.publish_lore(["chronicles/a", "chronicles/b"], flaky, dates)
+        self.assertEqual(run["unfinished"], "未完成：chronicles/a")
+        self.assertEqual(run["state"]["lore"]["pending"], ["chronicles/a"])
+        self.assertEqual(run["state"]["lore"]["seen"], ["chronicles/done", "chronicles/b"])
+        self.assertEqual((run["saved"], run["message"], run["pages"]), (["b.md"], "正史：收录 b", ["b.md"]))
+
+        def unavailable(source, label):
+            raise sync.ClaudeUnavailable("额度用尽")
+
+        run = self.publish_lore(["chronicles/a", "chronicles/b"], unavailable, dates)
+        self.assertEqual(run["unfinished"], "未完成：chronicles/a、chronicles/b")
+        self.assertEqual(run["state"]["lore"]["pending"], ["chronicles/a", "chronicles/b"])
+        self.assertEqual(run["state"]["modelRetryAfter"], "2026-11-27T15:00:00Z")
+        self.assertEqual((run["saved"], run["message"], run["pages"]), ([], "天书：等待订阅额度恢复", []))
+        self.assertEqual(run["calls"], ["--out"])
+
+    def test_news_quota_stop_skips_lore(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            with (patch.object(sync, "NEWS", root), patch.object(sync, "STATE", root / "state.json"),
+                  patch.object(sync, "prepare_page", side_effect=sync.ClaudeUnavailable("额度用尽")),
+                  patch.object(sync.runtime, "cooling", return_value=None),
+                  patch.object(sync, "publish_lore") as lore, patch.object(sync, "save"),
+                  redirect_stderr(StringIO())):
+                sync.write_state({"pending": ["a"], "sections": {}, "deploy": False,
+                                  "lore": {"since": LORE_SINCE, "seen": [], "pending": ["chronicles/x"]}})
+                with self.assertRaises(SystemExit):
+                    sync.publish()
+            lore.assert_not_called()
 
     def test_publish_requests_deploy_only_for_changed_page(self):
         slug = "patch-notes-version-24-02"

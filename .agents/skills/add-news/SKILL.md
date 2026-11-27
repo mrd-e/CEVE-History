@@ -25,7 +25,7 @@ description: 为新伊甸野史的“天书”板块收录一篇 EVE Online 官�
 
 ## 正史板块：点名收录一篇 lore
 
-只收被点名的 universe.eveonline.com 文章，不顺手补译同栏目其他篇。链接形如 `https://universe.eveonline.com/<栏目>/<短名>`。
+自动收录起点后首发的文章由自动收录处理（`docs/news-automation.md` 的“正史”一节）；点名收录只用于起点前的旧文或需提前收的单篇，不顺手补译同栏目其他篇。链接形如 `https://universe.eveonline.com/<栏目>/<短名>`。页面已存在时自动收录只记已处理，不覆盖。
 
 1. **抓英文稿。** `npm run news -- lore <链接> --out <草稿.md>`：取标题、YC 日期、官方栏目、封面和正文，写成“# 英文标题”开头的待译稿。草稿放草稿目录，不放 `src/`。
 2. **翻译。** 在 `translator/` 里按 `translator/.agents/skills/translate-article/SKILL.md` 全流程走，入口用 `prepare --file <草稿.md> --label <短名>`。人名、势力、地名、舰船先查 SDE 与官方中文版既有译名，与天书已有译法保持一致；lore 专有名词没有官方译名时按译者交付的“待核对”清单在汇报里列出。

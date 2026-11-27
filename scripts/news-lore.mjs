@@ -88,6 +88,9 @@ export function validateLore(data, body, slug) {
 
 // ---------- 抓取英文稿 ----------
 
+/** 设定百科类页面（帝国、势力等）没有发布日期，无法定 YC 纪年。 */
+export class UndatedLoreError extends Error {}
+
 const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
 const decode = s => String(s).replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (all, e) => {
   if (e[0] === '#') return String.fromCodePoint(e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : Number(e.slice(1)));
@@ -198,7 +201,7 @@ export function loreFromHtml(html, url) {
   const column = state.category?.[article.category]?.slug ?? parsed.category;
   if (!LORE_COLUMNS.some(c => c.key === column)) throw new Error(`未知的官方分类：${column}`);
   const published = String(article.publicationDate ?? '').slice(0, 10);
-  if (!DATE.test(published)) throw new Error(`发布日期无法识别：${article.publicationDate}`);
+  if (!DATE.test(published)) throw new UndatedLoreError(`发布日期无法识别：${article.publicationDate}`);
   const start = html.indexOf('<article');
   const end = html.indexOf('</article>', start);
   if (start < 0 || end < 0) throw new Error('页面中没有 <article> 正文');
