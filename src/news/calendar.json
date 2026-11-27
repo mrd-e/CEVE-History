@@ -3297,6 +3297,43 @@
       "discount": "1 至 24 个月欧米伽七五折（15–198 美元）",
       "bonus": "附赠铜闪系列涂装（1 至 7 款，含盖亚级首款涂装）",
       "news": "25-off-omega-free-black-friday-skins"
+    },
+    {
+      "key": "2026-11-27-black-friday-mastery-50",
+      "name": "黑色星期五：精通礼包最高五折",
+      "nameEn": "Black Friday Deals",
+      "deal": "pack",
+      "off": 50,
+      "start": "2026-11-27",
+      "end": "2026-12-02T23:59",
+      "channel": "web",
+      "discount": "1 级五折（5 美元），2 至 4 级六折，5 级七折（175 美元）；每种每账号限购一次",
+      "news": "black-friday-deals"
+    },
+    {
+      "key": "2026-11-27-black-friday-nes-skill-boost-3for2",
+      "name": "黑色星期五：新伊甸商城技能加速礼包买二得三",
+      "nameEn": "Black Friday Deals",
+      "deal": "pack",
+      "off": 33,
+      "start": "2026-11-27",
+      "end": "2026-12-02T23:59",
+      "channel": "game",
+      "discount": "离站、加力燃烧、跃迁、跳跃四种技能加速礼包买二得三（1,000–12,000 伊甸币，折合六七折）；每种每账号限购一次",
+      "news": "black-friday-deals"
+    },
+    {
+      "key": "2026-11-27-black-friday-plex-25",
+      "name": "黑色星期五：伊甸币七五折 + 玛贝部交易所涂装",
+      "nameEn": "Black Friday Deals",
+      "deal": "plex",
+      "off": 25,
+      "start": "2026-11-27",
+      "end": "2026-12-06T23:59",
+      "channel": "web",
+      "discount": "500–20,000 伊甸币礼包七五折（500 伊甸币 18.75 美元，20,000 伊甸币 487.50 美元），可多次购买",
+      "bonus": "每档附赠全新玛贝部交易所涂装，礼包越大涂装越多，20,000 伊甸币礼包含全部七款",
+      "news": "black-friday-deals"
     }
   ],
   "skip": [

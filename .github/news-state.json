@@ -24,7 +24,8 @@
     "policy-update-giveaways",
     "get-your-skins-in-space-for-less-plex",
     "crimson-harvest-open-the-bloodgates",
-    "gm-week-is-upon-us"
+    "gm-week-is-upon-us",
+    "black-friday-deals"
   ],
   "feed": [
     "black-friday-deals",
@@ -36,9 +37,7 @@
     "alliance-tournament-xxii-wrap-up",
     "up-to-25-off-omega-expansion-deals"
   ],
-  "pending": [
-    "black-friday-deals"
-  ],
+  "pending": [],
   "patch": "patch-notes-version-24-02",
   "observed": "c28b1a9963694a5fd72334360a7c5eb0a80e57bd1f83f6ef356aa5ac357f0844",
   "sections": {
@@ -100,11 +99,18 @@
       }
     }
   },
-  "deploy": true,
+  "deploy": false,
   "patchPublishedAt": "2026-11-26T11:00:17.672Z",
   "lore": {
     "since": "2026-09-23",
-    "seen": [],
+    "seen": [
+      "new-eden-news/empress-celebrates-jubilee-with-blessed-exchange-edict",
+      "new-eden-news/dimensional-shift-forces-ansiblex-updates-soct-remains-silent",
+      "new-eden-news/blood-raiders-invade-unstable-pochven",
+      "new-eden-news/conquest-research-revealed-and-restricted-by-concord",
+      "new-eden-news/trigs-plan-drifter-structure-destruction-in-azdaja-redoubt",
+      "new-eden-news/scope-live-azdaja-redoubt-strike-destruction-aftermath-tetrimon-victorious-and-valkanir-out"
+    ],
     "pending": []
   }
 }
